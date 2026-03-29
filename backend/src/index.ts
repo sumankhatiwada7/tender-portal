@@ -4,6 +4,7 @@ import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import authRoute from "./modules/auth/auth.route";
+import tenderRoute from "./modules/tender/tender.route";
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.get("/", (_req, res) => {
   res.json({ message: "Queue backend running" });
 });
 app.use('/api/v1/auth',authRoute);
+app.use('/api/v1/tender',tenderRoute);
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);

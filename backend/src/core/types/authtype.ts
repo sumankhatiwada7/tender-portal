@@ -1,12 +1,17 @@
 import {Request} from "express"
 
-export type roles = ["admin", "government", "business"] 
+
+export enum roles {
+    admin = "admin",
+    government = "government",
+    business = "business",
+}
 
 export interface jwtpayload{
     id:string,
-    role:roles;
+    role:roles
 }
 
 export interface authrequest extends Request{
-
+  user?:jwtpayload
 }
