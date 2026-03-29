@@ -5,7 +5,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import authRoute from "./modules/auth/auth.route";
 import tenderRoute from "./modules/tender/tender.route";
-
+import { swaggerSpec } from "./core/swagger/swagger";
+import swaggerUi from "swagger-ui-express";
 dotenv.config();
 
 const app = express();
@@ -19,8 +20,12 @@ app.use(morgan("dev"));
 app.get("/", (_req, res) => {
   res.json({ message: "Queue backend running" });
 });
-app.use('/api/v1/auth',authRoute);
-app.use('/api/v1/tender',tenderRoute);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get("/api-docs.json", (_req, res) => {
+  res.json(swaggerSpec);
+});
+app.use("/api/v1/auth", authRoute);
+app.use("/api/v1/tender", tenderRoute);
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
