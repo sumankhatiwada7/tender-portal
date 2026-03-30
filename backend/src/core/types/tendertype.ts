@@ -1,17 +1,18 @@
-import { Document } from "mongoose";
-import types from "mongoose";
+import { Document, Types } from "mongoose";
 
-export type tenderStatus = "open" | "closed";
+
+export type tenderStatus = "open" | "closed" | "awarded" ;;
 
 
 export interface tenderDocument extends Document{
-    id:types.ObjectId,
+    _id:Types.ObjectId,
     title:string,
     description:string,
     deadline:Date,
     budget:number,
     createdBy:string,
     status:tenderStatus
+    awardedto?:Types.ObjectId
 }
 export type tenderlist ={
     id:string,
@@ -21,6 +22,7 @@ export type tenderlist ={
     budget:number,
     createdBy:string,
     status:tenderStatus
+    awardedto?:string
 }
 export type tenderResponse ={
     message:string,

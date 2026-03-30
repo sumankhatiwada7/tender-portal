@@ -18,29 +18,26 @@ const router= express.Router();
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - title
- *               - description
- *               - deadline
- *               - budget
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               deadline:
- *                 type: string
- *                 format: date-time
- *               budget:
- *                 type: number
+ *             $ref: '#/components/schemas/CreateTenderRequest'
  *     responses:
- *       200:
+ *       201:
  *         description: Tender created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/TenderResponse'
  *       400:
  *         description: Validation failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationErrorResponse'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  */
 router.post("/create", authMiddleware, authorizeRoles([roles.government]), CreateTender);
 
@@ -62,8 +59,16 @@ router.post("/create", authMiddleware, authorizeRoles([roles.government]), Creat
  *     responses:
  *       200:
  *         description: Tender found successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/TenderResponse'
  *       404:
  *         description: Tender not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  */
 router.get("/:id", authMiddleware, GetTenderById);
 
@@ -79,8 +84,16 @@ router.get("/:id", authMiddleware, GetTenderById);
  *     responses:
  *       200:
  *         description: Tenders found successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/TenderListResponse'
  *       404:
  *         description: No tenders found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  */
 router.get("/", authMiddleware, GetAllTenders);
 
@@ -104,25 +117,26 @@ router.get("/", authMiddleware, GetAllTenders);
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               deadline:
- *                 type: string
- *                 format: date-time
- *               budget:
- *                 type: number
- *               status:
- *                 type: string
- *                 enum: [open, closed]
+ *             $ref: '#/components/schemas/UpdateTenderRequest'
  *     responses:
  *       200:
  *         description: Tender updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/TenderResponse'
+ *       400:
+ *         description: Validation failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationErrorResponse'
  *       404:
  *         description: Tender not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  */
 router.put("/update/:id", authMiddleware, authorizeRoles([roles.government]), UpdateTender);
 
@@ -144,8 +158,16 @@ router.put("/update/:id", authMiddleware, authorizeRoles([roles.government]), Up
  *     responses:
  *       200:
  *         description: Tender deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  *       404:
  *         description: Tender not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  */
 router.post("/delete/:id", authMiddleware, authorizeRoles([roles.government]), DeleteTender);
 

@@ -5,10 +5,115 @@ import { roles } from "../../core/types/authtype";
 
 const router = express.Router();
 
-
+/**
+ * @swagger
+ * /api/v1/bid/create/{tenderid}:
+ *   post:
+ *     summary: Create a bid for a tender
+ *     tags:
+ *       - Bid
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: tenderid
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateBidRequest'
+ *     responses:
+ *       201:
+ *         description: Bid created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BidResponse'
+ *       400:
+ *         description: Validation failed or duplicate bid
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - $ref: '#/components/schemas/ValidationErrorResponse'
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 
 router.post('/create/:tenderid', authMiddleware, authorizeRoles([roles.business]), createBid);
+/**
+ * @swagger
+ * /api/v1/bid/tender/{tenderid}:
+ *   get:
+ *     summary: Get all bids for a tender
+ *     tags:
+ *       - Bid
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: tenderid
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Bids retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BidListResponse'
+ *       404:
+ *         description: No bids found for this tender
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 router.get('/tender/:tenderid', authMiddleware, authorizeRoles([roles.government]), getBidsForTender);
+/**
+ * @swagger
+ * /api/v1/bid/tender/{tenderid}/{bidid}:
+ *   get:
+ *     summary: Get one bid for a tender
+ *     tags:
+ *       - Bid
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: tenderid
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: bidid
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Bid retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BidResponse'
+ *       404:
+ *         description: Bid not found for this tender
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 router.get('/tender/:tenderid/:bidid', authMiddleware, authorizeRoles([roles.government]), getBidsbyidfortender);
 
 export default router;

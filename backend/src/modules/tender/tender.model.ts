@@ -25,8 +25,12 @@ const tenderSchema= new mongoose.Schema({
     },
     status:{
         type:String,
-        enum:["open","closed"],
+        enum:["open","closed","awarded"],
         required:true
+    },
+    awardedto:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"business",
     }
 },{timestamps:true});
 

@@ -6,13 +6,14 @@ import Tender from "./tender.model";
 
 function toTenderListItem(tender: tenderDocument): tenderlist {
     return{
-        id:String(tender.id),
+        id:String((tender as any)._id),
         title:tender.title,
         description:tender.description,
         deadline:tender.deadline,
         budget:tender.budget,
         createdBy:String(tender.createdBy),
-        status:tender.status
+        status:tender.status,
+        awardedto: tender.awardedto ? String(tender.awardedto) : undefined 
     }
 }
 
@@ -133,6 +134,15 @@ export async function UpdateTender(req: any, res: any) {
         const { id } = req.params;
         const data: updateTenderInput = req.body || {};
         const errors: NonNullable<errorstype["errors"]> = [];
+        const existing= await Tender.findById(id);
+        if(existing?.status === "awarded"){
+            const payload: apitype = {
+                message: "Cannot update an awarded tender",
+                sucess: false
+            }
+            return res.status(400).json(payload);
+        }
+
 
         if (Object.keys(data).length === 0) {
             const payload: errorstype = {
@@ -195,12 +205,12 @@ export async function UpdateTender(req: any, res: any) {
         if (data.budget !== undefined) updateData.budget = Number(data.budget);
         if (data.status !== undefined) updateData.status = data.status;
 
-        const tender = await Tender.findByIdAndUpdate(id, updateData, {
+        const tender1 = await Tender.findByIdAndUpdate(id, updateData, {
             new: true,
             runValidators: true
         });
 
-        if (!tender) {
+        if (!tender1) {
             const payload: apitype = {
                 message: "Tender not found",
                 sucess: false
@@ -211,7 +221,7 @@ export async function UpdateTender(req: any, res: any) {
         const payload: tenderResponse = {
             message: "Tender updated successfully",
             success: true,
-            tender: toTenderListItem(tender as unknown as tenderDocument)
+            tender: toTenderListItem(tender1 as unknown as tenderDocument)
         };
 
         return res.status(200).json(payload);
