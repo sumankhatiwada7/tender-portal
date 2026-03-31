@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import Jwt from "jsonwebtoken";
 import user from "mongoose";
-import {jwtpayload,authrequest, roles} from "../../core/types/authtype";
+import {jwtpayload,authrequest, roles} from "./authtype";
 import  {apitype} from "../../core/types/apitype"
 export const authMiddleware = (req: authrequest, res: Response, next: NextFunction) => {
     try{
@@ -71,6 +71,7 @@ export const authorizeRoles = (allowedRoles: roles[]) => {
             message:"Authorization error",
             sucess:false
         }
+        res.status(403).json(payload);
         }
     }
 }

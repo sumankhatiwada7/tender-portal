@@ -1,7 +1,7 @@
 import express from 'express';
 import { authMiddleware, authorizeRoles } from '../auth/auth.middleware';
-import { createBid,getBidsForTender,getBidsbyidfortender } from './bid.controller';
-import { roles } from "../../core/types/authtype";
+import { createBid,getBidsForTender,getBidsbyidfortender,acceptbid,rejectbid } from './bid.controller';
+import { roles } from "../auth/authtype";
 
 const router = express.Router();
 
@@ -115,6 +115,13 @@ router.get('/tender/:tenderid', authMiddleware, authorizeRoles([roles.government
  *               $ref: '#/components/schemas/ApiResponse'
  */
 router.get('/tender/:tenderid/:bidid', authMiddleware, authorizeRoles([roles.government]), getBidsbyidfortender);
+
+router.post('/accept/:tenderid/:bidid', authMiddleware, authorizeRoles([roles.government]), acceptbid);
+
+router.post('/reject/:tenderid/:bidid', authMiddleware, authorizeRoles([roles.government]), rejectbid);
+
+
+
 
 export default router;
 

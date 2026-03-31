@@ -1,7 +1,7 @@
 import express from "express";
 import { authMiddleware, authorizeRoles } from "../auth/auth.middleware";
 import { CreateTender,GetTenderById, GetAllTenders, DeleteTender, UpdateTender } from "./tender.controller";
-import  { roles } from "../../core/types/authtype";
+import  { roles } from "../auth/authtype";
 const router= express.Router();
 
 /**

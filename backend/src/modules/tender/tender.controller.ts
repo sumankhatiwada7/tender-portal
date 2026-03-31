@@ -1,7 +1,7 @@
 
 import type { apitype } from "../../core/types/apitype";
 import type { errorstype } from "../../core/types/errorstype";
-import type { tenderDocument,tenderlist,tenderResponse,tenderListResponse,tenderStatus,updateTenderInput } from "../../core/types/tendertype";
+import type { tenderDocument,tenderlist,tenderResponse,tenderListResponse,tenderStatus,updateTenderInput } from "./tendertype";
 import Tender from "./tender.model";
 
 function toTenderListItem(tender: tenderDocument): tenderlist {
