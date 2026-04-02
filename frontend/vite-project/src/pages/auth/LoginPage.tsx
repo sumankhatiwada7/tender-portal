@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { useSearchParams } from "react-router-dom";
+import { useForm, type FieldPath, type RegisterOptions } from "react-hook-form";
+import { Link, useSearchParams } from "react-router-dom";
 import { AUTH_BASE_PATH } from "../../features/auth/auth.config";
 import {
   clearSession,
@@ -10,7 +10,7 @@ import {
   persistSession,
 } from "../../features/auth/auth.utils";
 import type { AuthFormValues, LoginResponse, SessionState } from "../../features/auth/auth.types";
-import AuthLayout from "../../features/auth/components/AuthLayout";
+import AuthShell from "../../features/auth/components/AuthShell";
 import FeedbackMessage from "../../features/auth/components/FeedbackMessage";
 import InputField from "../../features/auth/components/InputField";
 
@@ -46,6 +46,29 @@ function LoginPage() {
   }, [searchParams, setValue]);
 
   const justRegistered = searchParams.get("registered") === "1";
+
+  function clearFeedback(field?: FieldPath<AuthFormValues>) {
+    if (field) {
+      clearErrors(field);
+    }
+
+    setFormError(null);
+    setExtraErrors([]);
+    setSuccessMessage(null);
+  }
+
+  function registerField<TFieldName extends FieldPath<AuthFormValues>>(
+    field: TFieldName,
+    options?: RegisterOptions<AuthFormValues, TFieldName>,
+  ) {
+    return register(field, {
+      ...options,
+      onChange: (event) => {
+        options?.onChange?.(event);
+        clearFeedback(field);
+      },
+    });
+  }
 
   async function onSubmit(values: AuthFormValues) {
     clearErrors();
@@ -95,9 +118,10 @@ function LoginPage() {
   }
 
   return (
-    <AuthLayout
+    <AuthShell
+      view="login"
       title="Welcome back"
-      description="Enter your credentials to continue into the queue system."
+      description="Sign in to continue into the queue system with backend validation shown inline."
       topFeedback={
         <>
           {justRegistered ? (
@@ -123,17 +147,17 @@ function LoginPage() {
       }
       bottomContent={
         session ? (
-          <div className="mt-5 flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div>
-              <p className="text-[0.82rem] uppercase tracking-[0.08em] text-teal-100/[0.9]">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Stored session
               </p>
-              <h3 className="mt-1 text-lg font-semibold">{session.user.name}</h3>
-              <p className="mt-1 text-sm text-stone-200/[0.8]">{session.user.email}</p>
-              <p className="mt-1 text-sm text-stone-200/[0.8]">{session.user.role.join(", ")}</p>
+              <h3 className="mt-2 text-base font-semibold text-slate-900">{session.user.name}</h3>
+              <p className="mt-1 text-sm text-slate-600">{session.user.email}</p>
+              <p className="mt-1 text-sm text-slate-600">{session.user.role}</p>
             </div>
             <button
-              className="rounded-2xl bg-white/[0.08] px-4 py-3 text-sm font-medium text-stone-100 transition hover:-translate-y-0.5 hover:bg-white/[0.12]"
+              className="mt-4 inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:border-slate-300 hover:bg-slate-100 active:translate-y-px"
               type="button"
               onClick={handleSignOut}
             >
@@ -145,30 +169,62 @@ function LoginPage() {
     >
       <form className="grid gap-4" onSubmit={handleSubmit(onSubmit)}>
         <InputField
-          label="Email"
+          autoComplete="email"
           type="email"
+          label="Email address"
           placeholder="alex@company.com"
-          registration={register("email", { required: "Email is required" })}
+          registration={registerField("email", { required: "Email is required" })}
           error={errors.email?.message}
+          onValueChange={() => clearFeedback("email")}
         />
 
         <InputField
-          label="Password"
+          autoComplete="current-password"
           type="password"
+          label="Password"
           placeholder="Enter your password"
-          registration={register("password", { required: "Password is required" })}
+          registration={registerField("password", { required: "Password is required" })}
           error={errors.password?.message}
+          onValueChange={() => clearFeedback("password")}
         />
 
         <button
-          className="mt-2 rounded-2xl bg-gradient-to-br from-teal-200 to-teal-500 px-4 py-4 font-semibold text-slate-950 transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70"
+          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3.5 font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700 active:translate-y-px disabled:cursor-wait disabled:bg-blue-400"
           type="submit"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Signing in..." : "Login"}
+          {isSubmitting ? (
+            <>
+              <svg
+                aria-hidden="true"
+                className="h-4 w-4 animate-spin"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path
+                  className="opacity-90"
+                  d="M22 12a10 10 0 0 0-10-10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span>Signing in...</span>
+            </>
+          ) : (
+            "Login"
+          )}
         </button>
+
+        <p className="text-center text-sm text-slate-600">
+          New here?{" "}
+          <Link className="font-semibold text-blue-600 transition-colors hover:text-blue-700" to="/register">
+            Create an account
+          </Link>
+        </p>
       </form>
-    </AuthLayout>
+    </AuthShell>
   );
 }
 

@@ -1,19 +1,18 @@
 import { Request, Response, NextFunction } from "express";
 import Jwt from "jsonwebtoken";
-import user from "mongoose";
 import {jwtpayload,authrequest, roles} from "./authtype";
 import  {apitype} from "../../core/types/apitype"
 export const authMiddleware = (req: authrequest, res: Response, next: NextFunction) => {
     try{
      const authHeader = req.headers.authorization;
-     if (!authHeader ){
+     if (!authHeader || !authHeader.startsWith("Bearer ")){
         const payload :apitype ={
-            message:"Authorization header missing",
+            message:"Authorization header missing or invalid",
             sucess: false
         }
         return res.status(401).json(payload);
     }
-        const token=req.cookies.token ;
+        const token=authHeader.slice(7).trim();
         if(!token){
             const payload:apitype={
                 message:"Token missing",
@@ -53,7 +52,7 @@ export const authorizeRoles = (allowedRoles: roles[]) => {
                     message:"User role not found",
                     sucess:false
                 }
-                res.status(403).json(payload);
+                return res.status(403).json(payload);
             }
             if(!allowedRoles.includes(userRole as unknown as roles)){
                 const payload:apitype={
@@ -71,7 +70,7 @@ export const authorizeRoles = (allowedRoles: roles[]) => {
             message:"Authorization error",
             sucess:false
         }
-        res.status(403).json(payload);
+        return res.status(403).json(payload);
         }
     }
 }

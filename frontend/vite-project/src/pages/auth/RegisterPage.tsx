@@ -1,11 +1,11 @@
 import axios from "axios";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useForm, type FieldPath, type RegisterOptions } from "react-hook-form";
+import { Link, useNavigate } from "react-router-dom";
 import { AUTH_BASE_PATH } from "../../features/auth/auth.config";
 import { parseAuthError } from "../../features/auth/auth.utils";
 import type { AuthFormValues, RegisterResponse } from "../../features/auth/auth.types";
-import AuthLayout from "../../features/auth/components/AuthLayout";
+import AuthShell from "../../features/auth/components/AuthShell";
 import FeedbackMessage from "../../features/auth/components/FeedbackMessage";
 import InputField from "../../features/auth/components/InputField";
 
@@ -28,6 +28,28 @@ function RegisterPage() {
       role: "business",
     },
   });
+
+  function clearFeedback(field?: FieldPath<AuthFormValues>) {
+    if (field) {
+      clearErrors(field);
+    }
+
+    setFormError(null);
+    setExtraErrors([]);
+  }
+
+  function registerField<TFieldName extends FieldPath<AuthFormValues>>(
+    field: TFieldName,
+    options?: RegisterOptions<AuthFormValues, TFieldName>,
+  ) {
+    return register(field, {
+      ...options,
+      onChange: (event) => {
+        options?.onChange?.(event);
+        clearFeedback(field);
+      },
+    });
+  }
 
   async function onSubmit(values: AuthFormValues) {
     clearErrors();
@@ -61,9 +83,10 @@ function RegisterPage() {
   }
 
   return (
-    <AuthLayout
+    <AuthShell
+      view="register"
       title="Create your account"
-      description="Set up a new account and choose the role that fits your workflow."
+      description="Create an account, choose your role, and keep backend validation visible at field level."
       topFeedback={
         <>
           {formError ? <FeedbackMessage tone="error">{formError}</FeedbackMessage> : null}
@@ -82,49 +105,97 @@ function RegisterPage() {
     >
       <form className="grid gap-4" onSubmit={handleSubmit(onSubmit)}>
         <InputField
-          label="Full name"
+          autoComplete="name"
           type="text"
+          label="Full name"
           placeholder="Alex Morgan"
-          registration={register("name", { required: "Name is required" })}
+          registration={registerField("name", { required: "Name is required" })}
           error={errors.name?.message}
+          onValueChange={() => clearFeedback("name")}
         />
 
         <InputField
-          label="Email"
+          autoComplete="email"
           type="email"
+          label="Email address"
           placeholder="alex@company.com"
-          registration={register("email", { required: "Email is required" })}
+          registration={registerField("email", { required: "Email is required" })}
           error={errors.email?.message}
+          onValueChange={() => clearFeedback("email")}
         />
 
         <InputField
-          label="Password"
+          autoComplete="new-password"
           type="password"
+          label="Password"
           placeholder="Enter your password"
-          registration={register("password", { required: "Password is required" })}
+          registration={registerField("password", { required: "Password is required" })}
           error={errors.password?.message}
+          onValueChange={() => clearFeedback("password")}
         />
 
-        <label className="grid gap-2">
-          <span className="text-[0.95rem] text-stone-100/85">Account role</span>
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium text-slate-700">Account role</span>
           <select
-            className="w-full rounded-2xl border border-white/[0.15] bg-white/5 px-4 py-4 text-stone-100 outline-none transition focus:border-teal-200/[0.9] focus:ring-4 focus:ring-teal-200/[0.15]"
-            {...register("role")}
+            aria-invalid={errors.role?.message ? "true" : "false"}
+            className={[
+              "w-full rounded-lg border bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition-all duration-200",
+              errors.role?.message
+                ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500"
+                : "border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500",
+            ].join(" ")}
+            {...registerField("role")}
           >
             <option value="business">Business</option>
             <option value="government">Government</option>
           </select>
+
+          <div
+            className={`grid transition-all duration-200 ${
+              errors.role?.message ? "mt-2 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+            }`}
+          >
+            <span className="overflow-hidden text-sm text-red-600">{errors.role?.message ?? ""}</span>
+          </div>
         </label>
 
         <button
-          className="mt-2 rounded-2xl bg-gradient-to-br from-teal-200 to-teal-500 px-4 py-4 font-semibold text-slate-950 transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70"
+          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3.5 font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700 active:translate-y-px disabled:cursor-wait disabled:bg-blue-400"
           type="submit"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Creating account..." : "Register"}
+          {isSubmitting ? (
+            <>
+              <svg
+                aria-hidden="true"
+                className="h-4 w-4 animate-spin"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path
+                  className="opacity-90"
+                  d="M22 12a10 10 0 0 0-10-10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span>Creating account...</span>
+            </>
+          ) : (
+            "Register"
+          )}
         </button>
+
+        <p className="text-center text-sm text-slate-600">
+          Already have an account?{" "}
+          <Link className="font-semibold text-blue-600 transition-colors hover:text-blue-700" to="/login">
+            Sign in
+          </Link>
+        </p>
       </form>
-    </AuthLayout>
+    </AuthShell>
   );
 }
 

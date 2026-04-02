@@ -6,13 +6,13 @@ export type userdocument ={
     name:string,
     email:string,
     password:string,
-    role:string[]
+    role:string
 }
 export type userlist={
     id:string,
     name:string,
     email:string,
-    role:string[]
+    role:string
 
 }
 export type usersresponse= apitype &{

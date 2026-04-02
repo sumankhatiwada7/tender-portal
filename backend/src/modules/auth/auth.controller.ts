@@ -26,13 +26,16 @@ export async function Register(req: any, res: any) {
         const name = data.name;
         const email = data.email;
         const password = data.password;
-        const role = data.role;
+        const role = typeof data.role === "string" ? data.role.trim().toLowerCase() : "";
 
         const errors: NonNullable<errorstype["errors"]> = [];
 
         if (!name) errors.push({ field: "name", message: "Name is required" });
         if (!email) errors.push({ field: "email", message: "Email is required" });
         if (!password) errors.push({ field: "password", message: "Password is required" });
+        if (data.role !== undefined && role !== "government" && role !== "business") {
+            errors.push({ field: "role", message: "Role must be either government or business" });
+        }
 
         if (errors.length > 0) {
             const payload: errorstype = {
@@ -53,7 +56,7 @@ export async function Register(req: any, res: any) {
         }
 
         const hashedpassword = await bcrypt.hash(String(password), 10);
-        const finalRole =   role === "government" || role === "business" ? role : "business";
+        const finalRole = role === "government" ? "government" : "business";
 
 
         const usercreate = await User.create({
@@ -69,7 +72,16 @@ export async function Register(req: any, res: any) {
             user: tolistitem(usercreate as unknown as userdocument)
         };
         return res.status(201).json(payload);
-    } catch (_error) {
+    } catch (error) {
+        if (error instanceof Error && error.name === "ValidationError") {
+            const payload: errorstype = {
+                message: "Validation error",
+                sucess: false,
+                errors: [{ message: error.message }],
+            };
+            return res.status(400).json(payload);
+        }
+
         const payload: apitype = {
             message: "Internal server error",
             sucess: false,
@@ -115,7 +127,7 @@ export async function Login(req: any, res: any) {
             return res.status(401).json(payload);
         }
 
-        const jwtSecret = process.env.JWT_SECRET;
+        const jwtSecret = process.env.jwtkey;
         if (!jwtSecret) {
             const payload: apitype = {
                 message: "JWT configuration missing",
@@ -124,7 +136,7 @@ export async function Login(req: any, res: any) {
             return res.status(500).json(payload);
         }
 
-    const tokendata = { userid: existinguser._id,userrole: existinguser.role };
+    const tokendata = { id: String(existinguser._id), role: existinguser.role };
     const token = jwt.sign(tokendata, jwtSecret, { expiresIn: "7d" })
 
     const payload: loginresponse = {
@@ -142,6 +154,4 @@ export async function Login(req: any, res: any) {
     };
     return res.status(500).json(payload);
 }
-
-
 }

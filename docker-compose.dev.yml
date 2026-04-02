@@ -1,0 +1,57 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: queue-mongodb-dev
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data_dev:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  backend:
+    image: node:20-alpine
+    container_name: queue-backend-dev
+    restart: unless-stopped
+    working_dir: /app
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      PORT: 5000
+      MONGODB_URI: mongodb://mongodb:27017/queue_system
+      CHOKIDAR_USEPOLLING: "true"
+    command: sh -c "npm ci && npx nodemon -L --watch src --ext ts --exec 'ts-node src/index.ts'"
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+
+  frontend:
+    image: node:20-alpine
+    container_name: queue-frontend-dev
+    restart: unless-stopped
+    working_dir: /app
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: ""
+      VITE_DEV_PROXY_TARGET: http://backend:5000
+      CHOKIDAR_USEPOLLING: "true"
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/vite-project:/app
+      - frontend_node_modules:/app/node_modules
+
+volumes:
+  mongo_data_dev:
+  backend_node_modules:
+  frontend_node_modules:

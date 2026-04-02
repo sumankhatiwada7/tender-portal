@@ -8,6 +8,7 @@ import tenderRoute from "./modules/tender/tender.route";
 import bidRoute from "./modules/bid/bid.route";
 import { swaggerSpec } from "./core/swagger/swagger";
 import swaggerUi from "swagger-ui-express";
+import { connectDB } from "./core/database/db";
 dotenv.config();
 
 const app = express();
@@ -59,6 +60,16 @@ app.use("/api/v1/bid", bidRoute);
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/tender", tenderRoute);
 
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+async function startServer() {
+  try {
+    await connectDB();
+    app.listen(port, () => {
+      console.log(`Server running on http://localhost:${port}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+}
+
+startServer();
