@@ -10,6 +10,9 @@ export interface tenderDocument extends Document{
     description:string,
     deadline:Date,
     budget:number,
+    category:string,
+    location:string,
+    documents:string[],
     createdBy:string,
     status:tenderStatus
     awardedto?:Types.ObjectId
@@ -20,6 +23,9 @@ export type tenderlist ={
     description:string,
     deadline:Date,
     budget:number,
+    category:string,
+    location:string,
+    documents:string[],
     createdBy:string,
     status:tenderStatus
     awardedto?:string
@@ -31,7 +37,7 @@ export type tenderResponse ={
 }
 
 export type updateTenderInput = Partial<
-    Pick<tenderlist, "title" | "description" | "deadline" | "budget" | "status">
+    Pick<tenderlist, "title" | "description" | "deadline" | "budget" | "status" | "category" | "location" | "documents">
 >;
 
 export type tenderListResponse ={

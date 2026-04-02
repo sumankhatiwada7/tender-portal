@@ -9,10 +9,16 @@ import { EmailNotification } from "../emailnotification/email.notification";
 import { templates } from "../../core/notification/template";
 
 function tolistitem(bid: BidDocument): bidlist {
+    const businessDetails = (bid as any).businessId && typeof (bid as any).businessId === "object"
+        ? (bid as any).businessId
+        : null;
+
     return {
         id: String(bid.id),
         tenderId: String(bid.tenderId),
-        businessId: String(bid.businessId),
+        businessId: String(businessDetails?._id ?? bid.businessId),
+        businessName: businessDetails?.name,
+        businessEmail: businessDetails?.email,
         proposal: bid.proposal,
         amount: bid.amount,
         status: bid.status
@@ -39,10 +45,11 @@ export async function createBid(req: any, res: any) {
         }
         const newBid = new bid({ businessId: businessid, tenderId: tenderid, proposal, amount });
         await newBid.save();
+        const createdBid = await bid.findById(newBid._id).populate("businessId", "name email");
         const payload: bidlistResponse = {
             message: "Bid created successfully",
             success: true,
-            bid: tolistitem(newBid)
+            bid: tolistitem((createdBid ?? newBid) as unknown as BidDocument)
         }
         return res.status(201).json(payload);
     } catch (error) {
@@ -54,13 +61,9 @@ export async function createBid(req: any, res: any) {
 export async function getBidsForTender(req: any, res: any) {
     try {
         const tenderid = req.params.tenderid;
-        const bids = await bid.find({ tenderId: tenderid });
-        if (!bids || bids.length === 0) {
-            const payload: apitype = { message: "No bids found for this tender", sucess: false };
-            return res.status(404).json(payload);
-        }
+        const bids = await bid.find({ tenderId: tenderid }).populate("businessId", "name email").sort({ createdAt: -1 });
         const payload: bidListResponses = {
-            message: "Bids retrieved successfully",
+            message: bids.length > 0 ? "Bids retrieved successfully" : "No bids found for this tender",
             success: true,
             bids: bids.map(tolistitem)
         }
@@ -75,7 +78,7 @@ export async function getBidsbyidfortender(req: any, res: any) {
     try {
         const tenderid = req.params.tenderid;
         const bidid = req.params.bidid;
-        const biddata = await bid.findOne({ _id: bidid, tenderId: tenderid });
+        const biddata = await bid.findOne({ _id: bidid, tenderId: tenderid }).populate("businessId", "name email");
         if (!biddata) {
             const payload: apitype = { message: "Bid not found for this tender", sucess: false };
             return res.status(404).json(payload);

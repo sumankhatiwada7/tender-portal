@@ -1,25 +1,24 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useForm, type FieldPath, type RegisterOptions } from "react-hook-form";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AUTH_BASE_PATH } from "../../features/auth/auth.config";
 import {
-  clearSession,
-  loadSession,
+  getHomeRouteForRole,
   parseAuthError,
   persistSession,
 } from "../../features/auth/auth.utils";
-import type { AuthFormValues, LoginResponse, SessionState } from "../../features/auth/auth.types";
+import type { AuthFormValues, LoginResponse } from "../../features/auth/auth.types";
 import AuthShell from "../../features/auth/components/AuthShell";
 import FeedbackMessage from "../../features/auth/components/FeedbackMessage";
 import InputField from "../../features/auth/components/InputField";
 
 function LoginPage() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [formError, setFormError] = useState<string | null>(null);
   const [extraErrors, setExtraErrors] = useState<string[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [session, setSession] = useState<SessionState | null>(loadSession);
 
   const {
     register,
@@ -88,7 +87,6 @@ function LoginPage() {
       };
 
       persistSession(nextSession);
-      setSession(nextSession);
       setSuccessMessage(response.data.message);
       reset({
         name: "",
@@ -96,6 +94,15 @@ function LoginPage() {
         password: "",
         role: "business",
       });
+
+      const requestedPath = searchParams.get("next");
+      const fallbackPath = getHomeRouteForRole(nextSession.user.role);
+      const nextPath =
+        nextSession.user.role === "government" && requestedPath?.startsWith("/government")
+          ? requestedPath
+          : fallbackPath;
+
+      navigate(nextPath, { replace: true });
     } catch (error) {
       const parsedError = parseAuthError(error);
 
@@ -109,12 +116,6 @@ function LoginPage() {
       setFormError(parsedError.message);
       setExtraErrors(parsedError.extraErrors);
     }
-  }
-
-  function handleSignOut() {
-    clearSession();
-    setSession(null);
-    setSuccessMessage("Stored session cleared.");
   }
 
   return (
@@ -144,27 +145,6 @@ function LoginPage() {
             </FeedbackMessage>
           ) : null}
         </>
-      }
-      bottomContent={
-        session ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Stored session
-              </p>
-              <h3 className="mt-2 text-base font-semibold text-slate-900">{session.user.name}</h3>
-              <p className="mt-1 text-sm text-slate-600">{session.user.email}</p>
-              <p className="mt-1 text-sm text-slate-600">{session.user.role}</p>
-            </div>
-            <button
-              className="mt-4 inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:border-slate-300 hover:bg-slate-100 active:translate-y-px"
-              type="button"
-              onClick={handleSignOut}
-            >
-              Clear session
-            </button>
-          </div>
-        ) : null
       }
     >
       <form className="grid gap-4" onSubmit={handleSubmit(onSubmit)}>

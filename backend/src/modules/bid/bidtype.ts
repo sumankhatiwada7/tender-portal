@@ -16,6 +16,8 @@ export type bidlist = {
     id: string;
     tenderId: string;
     businessId: string;
+    businessName?: string;
+    businessEmail?: string;
     proposal: string;
     amount: number;
     status: status;

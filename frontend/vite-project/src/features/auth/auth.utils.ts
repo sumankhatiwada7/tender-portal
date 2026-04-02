@@ -2,6 +2,7 @@ import axios from "axios";
 import type { FieldPath } from "react-hook-form";
 import { AUTH_STORAGE_KEY } from "./auth.config";
 import type {
+  AppRole,
   ApiErrorResponse,
   AuthFormValues,
   ParsedAuthError,
@@ -28,6 +29,14 @@ export function clearSession() {
 
 export function persistSession(session: SessionState) {
   window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+}
+
+export function getHomeRouteForRole(role?: AppRole | string) {
+  return role === "government" ? "/government" : "/";
+}
+
+export function getHomeRouteForSession(session: SessionState | null) {
+  return getHomeRouteForRole(session?.user.role);
 }
 
 export function parseAuthError(error: unknown): ParsedAuthError {

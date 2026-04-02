@@ -18,6 +18,20 @@ const tenderSchema= new mongoose.Schema({
         type:Number,
         required:true
     },
+    category:{
+        type:String,
+        required:true,
+        trim:true
+    },
+    location:{
+        type:String,
+        required:true,
+        trim:true
+    },
+    documents:{
+        type:[String],
+        default:[]
+    },
     createdBy:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"user",

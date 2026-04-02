@@ -1,6 +1,7 @@
 import type { FieldPath } from "react-hook-form";
 
 export type RoleOption = "business" | "government";
+export type AppRole = RoleOption | "admin";
 
 export type AuthFormValues = {
   name: string;
@@ -19,7 +20,7 @@ export type AuthUser = {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: AppRole;
 };
 
 export type LoginResponse = {
