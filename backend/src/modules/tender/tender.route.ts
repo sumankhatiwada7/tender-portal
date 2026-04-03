@@ -39,7 +39,7 @@ const router= express.Router();
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  */
-router.post("/create", authMiddleware, authorizeRoles([roles.government]), CreateTender);
+router.post("/create", authMiddleware, authorizeRoles(roles.government), CreateTender);
 
 /**
  * @swagger
@@ -138,7 +138,7 @@ router.get("/", authMiddleware, GetAllTenders);
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  */
-router.put("/update/:id", authMiddleware, authorizeRoles([roles.government]), UpdateTender);
+router.put("/update/:id", authMiddleware, authorizeRoles(roles.government), UpdateTender);
 
 /**
  * @swagger
@@ -169,6 +169,6 @@ router.put("/update/:id", authMiddleware, authorizeRoles([roles.government]), Up
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  */
-router.post("/delete/:id", authMiddleware, authorizeRoles([roles.government]), DeleteTender);
+router.post("/delete/:id", authMiddleware, authorizeRoles(roles.government), DeleteTender);
 
 export default router;

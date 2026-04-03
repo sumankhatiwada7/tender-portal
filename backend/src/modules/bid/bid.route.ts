@@ -49,7 +49,7 @@ const router = express.Router();
  *               $ref: '#/components/schemas/ApiResponse'
  */
 
-router.post('/create/:tenderid', authMiddleware, authorizeRoles([roles.business]), createBid);
+router.post('/create/:tenderid', authMiddleware, authorizeRoles(roles.business), createBid);
 /**
  * @swagger
  * /api/v1/bid/tender/{tenderid}:
@@ -79,7 +79,7 @@ router.post('/create/:tenderid', authMiddleware, authorizeRoles([roles.business]
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  */
-router.get('/tender/:tenderid', authMiddleware, authorizeRoles([roles.government]), getBidsForTender);
+router.get('/tender/:tenderid', authMiddleware, authorizeRoles(roles.government), getBidsForTender);
 /**
  * @swagger
  * /api/v1/bid/tender/{tenderid}/{bidid}:
@@ -114,11 +114,11 @@ router.get('/tender/:tenderid', authMiddleware, authorizeRoles([roles.government
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  */
-router.get('/tender/:tenderid/:bidid', authMiddleware, authorizeRoles([roles.government]), getBidsbyidfortender);
+router.get('/tender/:tenderid/:bidid', authMiddleware, authorizeRoles(roles.government), getBidsbyidfortender);
 
-router.post('/accept/:tenderid/:bidid', authMiddleware, authorizeRoles([roles.government]), acceptbid);
+router.post('/accept/:tenderid/:bidid', authMiddleware, authorizeRoles(roles.government), acceptbid);
 
-router.post('/reject/:tenderid/:bidid', authMiddleware, authorizeRoles([roles.government]), rejectbid);
+router.post('/reject/:tenderid/:bidid', authMiddleware, authorizeRoles(roles.government), rejectbid);
 
 
 

@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import { createAdminifnotexists } from "../../modules/admin/admin.factory";
+
 
 export const connectDB = async () => {
     try{
@@ -12,6 +14,7 @@ export const connectDB = async () => {
             serverSelectionTimeoutMS: 5000,
         })
         console.log("MongoDB connected")
+        await createAdminifnotexists();
     } catch (error) {
         console.log("MongoDB connection failed:", error)
         throw error;

@@ -9,6 +9,10 @@ import ManageTendersPage from "./pages/government/ManageTendersPage";
 import ProfilePage from "./pages/government/ProfilePage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import AdminDashboardShell from "./features/admin/components/AdminDashboardShell";
+import AdminApprovalsPage from "./pages/admin/AdminApprovalsPage";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
 
 function App() {
   return (
@@ -25,6 +29,13 @@ function App() {
           <Route path="manage" element={<ManageTendersPage />} />
           <Route path="bids" element={<BidsPage />} />
           <Route path="profile" element={<ProfilePage />} />
+        </Route>
+      </Route>
+      <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+        <Route path="/admin" element={<AdminDashboardShell />}>
+          <Route index element={<AdminDashboardPage />} />
+          <Route path="approvals" element={<AdminApprovalsPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

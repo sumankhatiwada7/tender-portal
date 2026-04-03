@@ -32,7 +32,15 @@ export function persistSession(session: SessionState) {
 }
 
 export function getHomeRouteForRole(role?: AppRole | string) {
-  return role === "government" ? "/government" : "/";
+  if (role === "government") {
+    return "/government";
+  }
+
+  if (role === "admin") {
+    return "/admin";
+  }
+
+  return "/";
 }
 
 export function getHomeRouteForSession(session: SessionState | null) {

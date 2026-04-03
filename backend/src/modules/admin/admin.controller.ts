@@ -94,7 +94,7 @@ export async function approvedUser(req:any,res:any){
 
 export async function rejectUser(req: any, res: any) {
     try {
-        const userid = req.params.userid;
+        const userid = req.params.id;
         const user = await User.findById(userid);
         if (!user) {
             const payload: apitype = { message: "User not found", sucess: false };
