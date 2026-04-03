@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import type { apitype } from "../../core/types/apitype";
 import type { errorstype } from "../../core/types/errorstype";
 import type { userdocument, userlist, userresponse } from "../../core/types/usertype";
+import { roles } from "./authtype";
 import { User } from "../user/user.model";
 
 type loginresponse = apitype & {
@@ -17,6 +18,7 @@ function tolistitem(user: userdocument): userlist {
         name: user.name,
         email: user.email,
         role: user.role,
+        status: user.status,
     };
 }
 
@@ -117,6 +119,20 @@ export async function Login(req: any, res: any) {
             };
             return res.status(401).json(payload);
         }
+        if (existinguser.status === "pending") {
+            const payload: errorstype = {
+                message: "Your account is still pending approval",
+                sucess:false
+            }
+            return res.status(403).json(payload)
+        }
+        if (existinguser.status === "rejected") {
+            const payload: errorstype = {
+                message: "Your account has been rejected",
+                sucess:false
+            }
+            return res.status(403).json(payload)
+        }
 
         const passwordMatch = await bcrypt.compare(String(password), existinguser.password);
         if (!passwordMatch) {
@@ -136,7 +152,7 @@ export async function Login(req: any, res: any) {
             return res.status(500).json(payload);
         }
 
-    const tokendata = { id: String(existinguser._id), role: existinguser.role };
+    const tokendata = { id: String(existinguser._id), role: existinguser.role as roles };
     const token = jwt.sign(tokendata, jwtSecret, { expiresIn: "7d" })
 
     const payload: loginresponse = {

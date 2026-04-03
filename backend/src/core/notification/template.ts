@@ -116,4 +116,53 @@ export const templates = {
     `,
     sms: `Dear ${businessName}, your bid for "${tenderTitle}" (${bidRef}) was not selected this time. Thank you for participating.`,
   }),
+  accountApproved: (name: string) => ({
+    subject: "Your account has been approved",
+    html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+            <div style="background:#0a2540;padding:32px 40px;">
+                <div style="font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#c9a84c;margin-bottom:10px;">
+                    Government Tender Management System
+                </div>
+                <div style="font-family:Georgia,serif;font-size:24px;color:#f5f0e8;">
+                    Account Approved
+                </div>
+            </div>
+            <div style="padding:36px 40px;background:#fff;">
+                <p style="font-size:15px;color:#555;">Dear ${name},</p>
+                <p style="font-size:15px;line-height:1.7;color:#1a1a1a;">
+                    Your account has been reviewed and <strong>approved</strong> by our admin team.
+                    You can now log in and access the platform.
+                </p>
+                <a href="${process.env.FRONTEND_URL}/login" 
+                   style="display:block;text-align:center;background:#0a2540;color:#f5f0e8;padding:13px 28px;border-radius:6px;font-size:13px;text-decoration:none;margin-top:24px;">
+                    Login to your account
+                </a>
+            </div>
+        </div>
+    `,
+}),
+
+accountRejected: (name: string) => ({
+    subject: "Your account registration status",
+    html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+            <div style="background:#1a1a1a;padding:32px 40px;">
+                <div style="font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#666;margin-bottom:10px;">
+                    Government Tender Management System
+                </div>
+                <div style="font-family:Georgia,serif;font-size:24px;color:#888;">
+                    Account Not Approved
+                </div>
+            </div>
+            <div style="padding:36px 40px;background:#fff;">
+                <p style="font-size:15px;color:#555;">Dear ${name},</p>
+                <p style="font-size:15px;line-height:1.7;color:#1a1a1a;">
+                    After review, your account registration has not been approved at this time.
+                    Please contact support if you believe this is a mistake.
+                </p>
+            </div>
+        </div>
+    `,
+}),
 };

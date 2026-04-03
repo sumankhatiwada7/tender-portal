@@ -21,6 +21,11 @@ const userSchema = new mongoose.Schema({
         required:true,
         enum:["admin","government","business"],
         default:"business"
+    },
+    status:{
+        type:String,
+        enum:["accepted","rejected","pending"],
+        default:"pending"
     }
 })
 
