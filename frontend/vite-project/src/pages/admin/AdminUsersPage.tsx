@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useToast } from "../../components/ToastProvider";
-import { approveUser, fetchAllUsers, rejectUser } from "../../features/admin/admin.api";
-import type { AdminUser, AdminUserRole, AdminUserStatus } from "../../features/admin/admin.types";
+import { approveUser, createManagedUser, fetchAllUsers, rejectUser } from "../../features/admin/admin.api";
+import type { AdminCreateUserPayload, AdminFieldErrors, AdminUser, AdminUserRole, AdminUserStatus } from "../../features/admin/admin.types";
 import {
   CardSurface,
   EmptyState,
@@ -23,6 +23,14 @@ function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | AdminUserStatus>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingAction, setPendingAction] = useState<{ user: AdminUser; action: "approve" | "reject" } | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createForm, setCreateForm] = useState<AdminCreateUserPayload>({
+    name: "",
+    email: "",
+    password: "",
+    role: "business",
+  });
+  const [createFormErrors, setCreateFormErrors] = useState<AdminFieldErrors>({});
 
   const pageSize = 10;
 
@@ -132,6 +140,57 @@ function AdminUsersPage() {
     setPendingAction(null);
   }
 
+  async function handleCreateUser(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setCreateFormErrors({});
+
+    const payload: AdminCreateUserPayload = {
+      name: createForm.name.trim(),
+      email: createForm.email.trim(),
+      password: createForm.password,
+      role: createForm.role,
+    };
+
+    if (!payload.name || !payload.email || !payload.password) {
+      setCreateFormErrors({
+        name: payload.name ? undefined : "Name is required",
+        email: payload.email ? undefined : "Email is required",
+        password: payload.password ? undefined : "Password is required",
+      });
+      showToast({
+        tone: "error",
+        title: "Missing details",
+        message: "Name, email, and password are required.",
+      });
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const createdUser = await createManagedUser(payload);
+      showToast({
+        tone: "success",
+        title: "Account created",
+        message: `${createdUser.name} (${createdUser.role}) is ready to use.`,
+      });
+      setCreateForm({ name: "", email: "", password: "", role: "business" });
+      setCreateFormErrors({});
+      await loadUsers();
+    } catch (createError) {
+      const errorWithFields = createError as Error & { fieldErrors?: AdminFieldErrors };
+      if (errorWithFields.fieldErrors) {
+        setCreateFormErrors(errorWithFields.fieldErrors);
+      }
+      showToast({
+        tone: "error",
+        title: "Create failed",
+        message: createError instanceof Error ? createError.message : "Unable to create this account.",
+      });
+    } finally {
+      setIsCreating(false);
+    }
+  }
+
   if (loading) {
     return <LoadingBlock label="Loading users..." />;
   }
@@ -157,6 +216,103 @@ function AdminUsersPage() {
 
   return (
     <div className="space-y-8">
+      <CardSurface className="p-6">
+        <div className="mb-5">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Create account</p>
+          <h2 className="mt-2 text-2xl font-semibold text-slate-950">Add a business or government user</h2>
+          <p className="mt-2 text-sm text-slate-500">New accounts created here are accepted immediately.</p>
+        </div>
+
+        <form className="grid gap-3 md:grid-cols-2" onSubmit={(event) => void handleCreateUser(event)}>
+          <label className="flex flex-col gap-2 text-sm">
+            <span className="font-semibold text-slate-700">Name</span>
+            <input
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-400"
+              type="text"
+              value={createForm.name}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                setCreateForm((current) => ({ ...current, name: nextValue }));
+                if (createFormErrors.name) {
+                  setCreateFormErrors((current) => ({ ...current, name: undefined }));
+                }
+              }}
+              placeholder="Organization name"
+              required
+            />
+            {createFormErrors.name ? <span className="text-xs text-rose-600">{createFormErrors.name}</span> : null}
+          </label>
+
+          <label className="flex flex-col gap-2 text-sm">
+            <span className="font-semibold text-slate-700">Email</span>
+            <input
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-400"
+              type="email"
+              value={createForm.email}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                setCreateForm((current) => ({ ...current, email: nextValue }));
+                if (createFormErrors.email) {
+                  setCreateFormErrors((current) => ({ ...current, email: undefined }));
+                }
+              }}
+              placeholder="contact@organization.com"
+              required
+            />
+            {createFormErrors.email ? <span className="text-xs text-rose-600">{createFormErrors.email}</span> : null}
+          </label>
+
+          <label className="flex flex-col gap-2 text-sm">
+            <span className="font-semibold text-slate-700">Password</span>
+            <input
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-400"
+              type="password"
+              value={createForm.password}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                setCreateForm((current) => ({ ...current, password: nextValue }));
+                if (createFormErrors.password) {
+                  setCreateFormErrors((current) => ({ ...current, password: undefined }));
+                }
+              }}
+              placeholder="Minimum 6 characters"
+              minLength={6}
+              required
+            />
+            {createFormErrors.password ? <span className="text-xs text-rose-600">{createFormErrors.password}</span> : null}
+          </label>
+
+          <label className="flex flex-col gap-2 text-sm">
+            <span className="font-semibold text-slate-700">Role</span>
+            <select
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-400"
+              value={createForm.role}
+              onChange={(event) => {
+                const nextValue = event.target.value as "business" | "government";
+                setCreateForm((current) => ({ ...current, role: nextValue }));
+                if (createFormErrors.role) {
+                  setCreateFormErrors((current) => ({ ...current, role: undefined }));
+                }
+              }}
+            >
+              <option value="business">Business</option>
+              <option value="government">Government</option>
+            </select>
+            {createFormErrors.role ? <span className="text-xs text-rose-600">{createFormErrors.role}</span> : null}
+          </label>
+
+          <div className="md:col-span-2">
+            <button
+              className="rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-500 disabled:cursor-not-allowed disabled:opacity-70"
+              type="submit"
+              disabled={isCreating}
+            >
+              {isCreating ? "Creating..." : "Create account"}
+            </button>
+          </div>
+        </form>
+      </CardSurface>
+
       <CardSurface className="p-5">
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex min-w-[220px] flex-1 flex-col gap-2 text-sm">

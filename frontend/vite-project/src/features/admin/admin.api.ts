@@ -2,7 +2,15 @@ import axios from "axios";
 import { API_BASE_URL } from "../auth/auth.config";
 import { clearSession, loadSession } from "../auth/auth.utils";
 import { getApiErrorMessage } from "../dashboard/dashboard.utils";
-import type { AdminApiMessage, AdminUser, AdminUsersResponse } from "./admin.types";
+import type {
+  AdminApiFieldError,
+  AdminApiMessage,
+  AdminCreateUserPayload,
+  AdminCreateUserResponse,
+  AdminFieldErrors,
+  AdminUser,
+  AdminUsersResponse,
+} from "./admin.types";
 
 const ADMIN_BASE_PATH = `${API_BASE_URL}/api/v1/admin`;
 
@@ -20,12 +28,44 @@ function getAuthorizedConfig() {
   };
 }
 
-function normalizeApiFailure(error: unknown, fallback: string) {
+type AdminRequestError = Error & {
+  fieldErrors?: AdminFieldErrors;
+};
+
+function toFieldErrors(rawErrors: unknown): AdminFieldErrors {
+  const errorsArray = Array.isArray(rawErrors) ? (rawErrors as AdminApiFieldError[]) : [];
+  const mapped: AdminFieldErrors = {};
+
+  for (const item of errorsArray) {
+    if (!item?.field || !item?.message) {
+      continue;
+    }
+
+    if (item.field === "name" || item.field === "email" || item.field === "password" || item.field === "role") {
+      mapped[item.field] = item.message;
+    }
+  }
+
+  return mapped;
+}
+
+function normalizeApiFailure(error: unknown, fallback: string): AdminRequestError {
   if (axios.isAxiosError(error) && error.response?.status === 401) {
     clearSession();
   }
 
-  return new Error(getApiErrorMessage(error, fallback));
+  const message = getApiErrorMessage(error, fallback);
+  const normalizedError = new Error(message) as AdminRequestError;
+
+  if (axios.isAxiosError(error)) {
+    const raw = error.response?.data as { errors?: unknown } | undefined;
+    const fieldErrors = toFieldErrors(raw?.errors);
+    if (Object.keys(fieldErrors).length > 0) {
+      normalizedError.fieldErrors = fieldErrors;
+    }
+  }
+
+  return normalizedError;
 }
 
 function toAdminUser(raw: {
@@ -79,5 +119,23 @@ export async function rejectUser(userId: string) {
     await axios.post<AdminApiMessage>(`${ADMIN_BASE_PATH}/reject-user/${userId}`, {}, getAuthorizedConfig());
   } catch (error) {
     throw normalizeApiFailure(error, "Unable to reject this user.");
+  }
+}
+
+export async function createManagedUser(payload: AdminCreateUserPayload) {
+  try {
+    const response = await axios.post<AdminCreateUserResponse>(
+      `${ADMIN_BASE_PATH}/create-user`,
+      payload,
+      getAuthorizedConfig(),
+    );
+
+    if (!response.data.user) {
+      throw new Error("User created but response payload is incomplete.");
+    }
+
+    return toAdminUser(response.data.user);
+  } catch (error) {
+    throw normalizeApiFailure(error, "Unable to create this account.");
   }
 }

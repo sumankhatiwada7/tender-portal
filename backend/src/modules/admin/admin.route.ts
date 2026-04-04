@@ -1,13 +1,14 @@
 import express from 'express';
 import { authMiddleware, authorizeRoles } from '../auth/auth.middleware';
 import { roles } from '../auth/authtype';
-import { getallusers,getPendingUsers,approvedUser,rejectUser } from './admin.controller';
+import { createuser, getallusers,getPendingUsers,approvedUser,rejectUser } from './admin.controller';
 
 
 const router = express.Router();
 
 router.get("/pending-users", authMiddleware, authorizeRoles(roles.admin), getPendingUsers);
 router.get("/all-users", authMiddleware, authorizeRoles(roles.admin), getallusers);
+router.post("/create-user", authMiddleware, authorizeRoles(roles.admin), createuser);
 router.post("/approve-user/:id", authMiddleware, authorizeRoles(roles.admin), approvedUser);
 router.post("/reject-user/:id", authMiddleware, authorizeRoles(roles.admin), rejectUser);
 

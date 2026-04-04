@@ -1,9 +1,21 @@
+import bcrypt from "bcryptjs";
 import { User } from "../user/user.model";
 import {apitype} from "../../core/types/apitype"
-import {usersresponse} from "../../core/types/usertype"
+import type { userdocument, userlist, userresponse, usersresponse } from "../../core/types/usertype";
 import {Notifier} from  "../../core/notification/notifier"
 import {templates} from "../../core/notification/template"
 import { EmailNotification } from "../emailnotification/email.notification";
+import { errorstype } from "../../core/types/errorstype";
+
+function tolistitem(user: userdocument): userlist {
+    return {
+        id: String(user.id),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+    };
+}
 
 
 
@@ -120,6 +132,76 @@ export async function rejectUser(req: any, res: any) {
         const payload: apitype = { message: "Internal server error", sucess: false };
         return res.status(500).json(payload);
     }
+}
+
+
+export async function createuser(req:any,res:any){
+
+    try{
+       const data = req.body || {};
+              const name = data.name;
+              const email = data.email;
+              const password = data.password;
+              const role = typeof data.role === "string" ? data.role.trim().toLowerCase() : "";
+      
+              const errors: NonNullable<errorstype["errors"]> = [];
+      
+              if (!name) errors.push({ field: "name", message: "Name is required" });
+              if (!email) errors.push({ field: "email", message: "Email is required" });
+              if (!password) errors.push({ field: "password", message: "Password is required" });
+              if (String(password ?? "").length > 0 && String(password).length < 6) {
+                  errors.push({ field: "password", message: "Password must be at least 6 characters" });
+              }
+              if (data.role !== undefined && role !== "government" && role !== "business") {
+                  errors.push({ field: "role", message: "Role must be either government or business" });
+              }
+      
+              if (errors.length > 0) {
+                  const payload: errorstype = {
+                      message: "Validation error",
+                      sucess: false,
+                      errors,
+                  };
+                  return res.status(400).json(payload);
+              }
+      
+              const existinguser = await User.findOne({ email: String(email).trim() });
+              if (existinguser) {
+                  const payload: errorstype = {
+                      message: "User already exists",
+                      sucess: false,
+                  };
+                  return res.status(400).json(payload);
+              }
+      
+              const hashedpassword = await bcrypt.hash(String(password), 10);
+              const finalRole = role === "government" ? "government" : "business";
+      
+      
+              const usercreate = await User.create({
+                  name,
+                  email: String(email).trim(),
+                  password: hashedpassword,
+                  role: finalRole,
+                  status:"accepted"
+              });
+      
+              const payload: userresponse = {
+                  message: "User created successfully",
+                  sucess: true,
+                  user: tolistitem(usercreate as unknown as userdocument)
+              };
+              return res.status(201).json(payload);
+    }
+    catch(error){
+        console.error("Error creating user:", error);
+        const payload:apitype ={
+            message:"An error occurred while creating user",
+            sucess:false
+        }
+        return res.status(500).json(payload)
+    }
+
 }
 
 
