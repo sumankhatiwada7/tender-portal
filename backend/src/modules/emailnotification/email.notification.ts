@@ -5,7 +5,7 @@ import { NotificationBase } from '../../core/notification/notification.base';
 export class EmailNotification extends NotificationBase{
     private subject:string;
     
-    constructor(recepient:string, subject:string, message:string){
+    constructor(recepient:string, message:string, subject:string){
         super(recepient, message);
         this.subject = subject;
         this.recepient = recepient;

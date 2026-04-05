@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import type { TenderItem } from "../features/dashboard/dashboard.types";
+import { formatCurrency, formatDate } from "../features/dashboard/dashboard.utils";
+import { fetchPublicTenders, sortOpenFirst } from "../features/tenders/publicTenders.api";
 
 type IconName =
   | "mark"
@@ -94,34 +97,25 @@ const steps: StepItem[] = [
   },
 ];
 
-const featuredTenders = [
-  {
-    title: "Regional Road Maintenance Upgrade",
-    agency: "Ministry of Infrastructure",
-    budget: "$1.2M",
-    deadline: "Apr 18, 2026",
-    category: "Transport",
-    bids: "12 bids",
-  },
-  {
-    title: "Rural Health Equipment Supply",
-    agency: "Department of Public Health",
-    budget: "$640K",
-    deadline: "Apr 24, 2026",
-    category: "Healthcare",
-    bids: "8 bids",
-  },
-  {
-    title: "Smart Water Metering Pilot",
-    agency: "City Utilities Authority",
-    budget: "$890K",
-    deadline: "May 2, 2026",
-    category: "Utilities",
-    bids: "15 bids",
-  },
-];
-
 function LandingPage() {
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [featuredTenders, setFeaturedTenders] = useState<TenderItem[]>([]);
+
+  useEffect(() => {
+    async function loadFeaturedTenders() {
+      try {
+        const tenders = await fetchPublicTenders();
+        const openFirst = sortOpenFirst(tenders).slice(0, 3);
+        setFeaturedTenders(openFirst);
+      } catch (_error) {
+        setFeaturedTenders([]);
+      }
+    }
+
+    void loadFeaturedTenders();
+  }, []);
+
   return (
     <main
       className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_30%),radial-gradient(circle_at_85%_12%,rgba(16,185,129,0.12),transparent_24%),linear-gradient(180deg,#f8fbff_0%,#f8fafc_48%,#eef6ff_100%)] text-slate-900"
@@ -176,20 +170,33 @@ function LandingPage() {
             </p>
 
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <a className="inline-flex items-center justify-center gap-2 rounded-full bg-sky-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-sky-600/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-sky-500" href="#featured">
+              <Link className="inline-flex items-center justify-center gap-2 rounded-full bg-sky-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-sky-600/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-sky-500" to="/tenders">
                 Browse Tenders
                 <AppIcon className="h-4 w-4" name="arrow" />
-              </a>
+              </Link>
               <Link className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3.5 text-base font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950" to="/register">
                 Register as Business
               </Link>
             </div>
 
-            <form className="mt-8 rounded-[1.75rem] border border-white/70 bg-white/86 p-3 shadow-soft" onSubmit={(event) => event.preventDefault()}>
+            <form
+              className="mt-8 rounded-[1.75rem] border border-white/70 bg-white/86 p-3 shadow-soft"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const trimmed = searchTerm.trim();
+                navigate(trimmed.length > 0 ? `/tenders?q=${encodeURIComponent(trimmed)}` : "/tenders");
+              }}
+            >
               <div className="flex flex-col gap-3 md:flex-row md:items-center">
                 <div className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <AppIcon className="h-5 w-5 text-slate-400" name="search" />
-                  <input className="w-full border-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400" placeholder="Search open tenders, sectors, or agencies" type="text" />
+                  <input
+                    className="w-full border-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+                    placeholder="Search open tenders, sectors, or agencies"
+                    type="text"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                  />
                 </div>
                 <button className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800" type="submit">
                   Search Opportunities
@@ -352,7 +359,7 @@ function LandingPage() {
               <h2 className="font-display mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">Explore current opportunities across public sector projects</h2>
               <p className="mt-4 text-lg leading-8 text-slate-300">Preview the kind of tenders businesses can discover, evaluate, and bid on through the platform.</p>
             </div>
-            <Link className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/8 px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/14" to="/login">
+            <Link className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/8 px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/14" to="/tenders">
               View all tenders
             </Link>
           </SectionReveal>
@@ -363,31 +370,37 @@ function LandingPage() {
                 <article className="h-full rounded-[1.9rem] border border-white/10 bg-white/6 p-6 shadow-[0_24px_60px_rgba(2,8,23,0.28)] transition-all duration-300 hover:-translate-y-2 hover:border-sky-400/30 hover:bg-white/9">
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="rounded-full border border-sky-300/20 bg-sky-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-200">{tender.category}</span>
-                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-300">{tender.bids}</span>
+                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-300">{tender.status}</span>
                   </div>
                   <h3 className="mt-5 text-2xl font-semibold text-white">{tender.title}</h3>
-                  <p className="mt-2 text-sm text-slate-300">{tender.agency}</p>
+                  <p className="mt-2 text-sm text-slate-300">Published opportunity</p>
                   <div className="mt-6 grid gap-4 rounded-[1.5rem] border border-white/10 bg-black/15 p-4 sm:grid-cols-2">
                     <div>
                       <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Budget</p>
-                      <p className="mt-2 text-lg font-semibold text-white">{tender.budget}</p>
+                      <p className="mt-2 text-lg font-semibold text-white">{formatCurrency(tender.budget)}</p>
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Deadline</p>
-                      <p className="mt-2 text-lg font-semibold text-white">{tender.deadline}</p>
+                      <p className="mt-2 text-lg font-semibold text-white">{formatDate(tender.deadline)}</p>
                     </div>
                   </div>
                   <div className="mt-6 flex items-center justify-between">
-                    <p className="text-sm text-slate-300">Ready for secure online submission</p>
-                    <a className="inline-flex items-center gap-2 text-sm font-semibold text-sky-300" href="#top">
-                      Preview
+                    <p className="text-sm text-slate-300">{tender.location}</p>
+                    <Link className="inline-flex items-center gap-2 text-sm font-semibold text-sky-300" to={`/tenders/${tender.id}`}>
+                      Details
                       <AppIcon className="h-4 w-4" name="arrow" />
-                    </a>
+                    </Link>
                   </div>
                 </article>
               </SectionReveal>
             ))}
           </div>
+
+          {featuredTenders.length === 0 ? (
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-slate-300">
+              No tenders are available yet. Create a tender from the government dashboard and it will appear here.
+            </div>
+          ) : null}
         </div>
       </section>
 

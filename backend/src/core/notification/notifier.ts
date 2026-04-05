@@ -8,8 +8,16 @@ export class Notifier {
   }
 
   async send(): Promise<void> {
-    await Promise.allSettled(
-      this.notifications.map(n => n.send())
+    const results = await Promise.allSettled(
+      this.notifications.map((n) => n.send())
     );
+
+    const failed = results.find(
+      (result): result is PromiseRejectedResult => result.status === "rejected"
+    );
+
+    if (failed) {
+      throw failed.reason;
+    }
   }
 }

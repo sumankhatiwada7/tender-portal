@@ -144,6 +144,24 @@ export async function GetAllTenders(req: any, res: any) {
     }
 }
 
+export async function GetPublicTenders(_req: any, res: any) {
+    try {
+        const tenders = await Tender.find().sort({ createdAt: -1 });
+        const payload: tenderListResponse = {
+            message: tenders.length > 0 ? "Tenders found successfully" : "No tenders yet",
+            success: true,
+            tenders: tenders.map((tender) => toTenderListItem(tender as unknown as tenderDocument))
+        };
+        return res.status(200).json(payload);
+    } catch (_error) {
+        const payload: apitype = {
+            message: "Internal server error",
+            sucess: false
+        };
+        return res.status(500).json(payload);
+    }
+}
+
 export async function UpdateTender(req: any, res: any) {
     try {
         const { id } = req.params;

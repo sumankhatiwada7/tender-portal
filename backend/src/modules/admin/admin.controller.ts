@@ -125,7 +125,7 @@ export async function rejectUser(req: any, res: any) {
         await new Notifier(
             new EmailNotification(user.email, t.html, t.subject)
         ).send();
-
+        
         const payload: apitype = { message: "User rejected successfully", sucess: true };
         return res.status(200).json(payload);
     } catch (error) {

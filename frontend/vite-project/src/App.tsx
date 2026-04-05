@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { GuestOnlyRoute, ProtectedRoute } from "./features/auth/auth.guards";
 import GovernmentDashboardShell from "./features/dashboard/components/GovernmentDashboardShell";
 import LandingPage from "./pages/LandingPage";
+import AllTendersPage from "./pages/AllTendersPage";
+import TenderDetailsPage from "./pages/TenderDetailsPage";
 import BidsPage from "./pages/government/BidsPage";
 import CreateTenderPage from "./pages/government/CreateTenderPage";
 import GovernmentDashboardPage from "./pages/government/GovernmentDashboardPage";
@@ -18,6 +20,8 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/tenders" element={<AllTendersPage />} />
+      <Route path="/tenders/:id" element={<TenderDetailsPage />} />
       <Route element={<GuestOnlyRoute />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />

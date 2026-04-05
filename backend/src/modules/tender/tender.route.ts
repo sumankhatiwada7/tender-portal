@@ -1,8 +1,11 @@
 import express from "express";
 import { authMiddleware, authorizeRoles } from "../auth/auth.middleware";
-import { CreateTender,GetTenderById, GetAllTenders, DeleteTender, UpdateTender } from "./tender.controller";
+import { CreateTender,GetTenderById, GetAllTenders, GetPublicTenders, DeleteTender, UpdateTender } from "./tender.controller";
 import  { roles } from "../auth/authtype";
 const router= express.Router();
+
+router.get("/public", GetPublicTenders);
+router.get("/public/:id", GetTenderById);
 
 /**
  * @swagger
