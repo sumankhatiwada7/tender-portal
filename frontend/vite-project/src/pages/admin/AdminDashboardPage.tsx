@@ -37,13 +37,13 @@ function AdminDashboardPage() {
   }, []);
 
   const stats = useMemo(() => {
-    const acceptedCount = allUsers.filter((user) => user.status === "accepted").length;
+    const approvedCount = allUsers.filter((user) => user.status === "approved").length;
     const rejectedCount = allUsers.filter((user) => user.status === "rejected").length;
     const businessCount = allUsers.filter((user) => user.role === "business").length;
     const governmentCount = allUsers.filter((user) => user.role === "government").length;
 
     return {
-      acceptedCount,
+      approvedCount,
       rejectedCount,
       businessCount,
       governmentCount,
@@ -97,7 +97,7 @@ function AdminDashboardPage() {
 
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         <StatCard detail="Users waiting for account review." icon="clock" label="Pending Users" tone="amber" value={String(pendingUsers.length)} />
-        <StatCard detail="Users currently allowed to log in." icon="shield" label="Accepted Users" tone="emerald" value={String(stats.acceptedCount)} />
+        <StatCard detail="Users currently allowed to log in." icon="shield" label="Approved Users" tone="emerald" value={String(stats.approvedCount)} />
         <StatCard detail="Government organizations registered." icon="building" label="Government Accounts" value={String(stats.governmentCount)} />
         <StatCard detail="Businesses participating in tenders." icon="briefcase" label="Business Accounts" tone="sky" value={String(stats.businessCount)} />
       </div>

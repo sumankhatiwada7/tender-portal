@@ -1,5 +1,25 @@
 import mongoose from "mongoose";
 
+const documentSchema = new mongoose.Schema(
+    {
+        url: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        originalname: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        uploadedAt: {
+            type: Date,
+            default: Date.now,
+        },
+    },
+    { _id: false }
+);
+
 const bidschema = new mongoose.Schema({
     tenderId:{
         type: mongoose.Schema.Types.ObjectId,
@@ -23,6 +43,10 @@ const bidschema = new mongoose.Schema({
         type:String,
         enum:["pending","accepted","rejected"],
         default:"pending"
+    },
+    documents: {
+        type: [documentSchema],
+        default: [],
     }
 
 

@@ -14,6 +14,7 @@ function TenderDetailsPage() {
   const [tender, setTender] = useState<TenderItem | null>(null);
   const [proposal, setProposal] = useState("");
   const [amount, setAmount] = useState("");
+  const [bidDocuments, setBidDocuments] = useState<File[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -73,10 +74,12 @@ function TenderDetailsPage() {
       await submitBusinessBid(tender.id, {
         proposal: proposal.trim(),
         amount: parsedAmount,
+        documents: bidDocuments,
       });
       setSubmitSuccess("Bid submitted successfully.");
       setProposal("");
       setAmount("");
+      setBidDocuments([]);
     } catch (submitBidError) {
       setSubmitError(submitBidError instanceof Error ? submitBidError.message : "Unable to submit bid.");
     } finally {
@@ -131,6 +134,25 @@ function TenderDetailsPage() {
                   <p className="mt-2 text-2xl font-semibold text-slate-900">{formatDate(tender.deadline)}</p>
                 </div>
               </div>
+
+              {tender.documents.length > 0 ? (
+                <div className="mt-6">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Attached documents</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {tender.documents.map((document) => (
+                      <a
+                        className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 transition hover:bg-sky-100"
+                        href={document.url}
+                        key={document.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {document.originalname}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </section>
 
             <section className="rounded-4xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
@@ -162,6 +184,18 @@ function TenderDetailsPage() {
                       onChange={(event) => setAmount(event.target.value)}
                       placeholder="Enter amount"
                     />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-semibold text-slate-700">Attach bid documents</span>
+                    <input
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none focus:border-sky-300"
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx"
+                      onChange={(event) => setBidDocuments(Array.from(event.target.files ?? []))}
+                    />
+                    <p className="mt-2 text-xs text-slate-500">Optional. Upload up to 3 files, 10MB each.</p>
                   </label>
 
                   {submitError ? <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{submitError}</p> : null}

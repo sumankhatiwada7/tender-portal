@@ -23,12 +23,18 @@ function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | AdminUserStatus>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingAction, setPendingAction] = useState<{ user: AdminUser; action: "approve" | "reject" } | null>(null);
+  const [detailsUser, setDetailsUser] = useState<AdminUser | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createForm, setCreateForm] = useState<AdminCreateUserPayload>({
     name: "",
     email: "",
     password: "",
     role: "business",
+    registrationNumber: "",
+    panNumber: "",
+    officeAddress: "",
+    representative: "",
   });
   const [createFormErrors, setCreateFormErrors] = useState<AdminFieldErrors>({});
 
@@ -60,7 +66,7 @@ function AdminUsersPage() {
       showToast({
         tone: "success",
         title: "Status updated",
-        message: `${user.name} is now accepted.`,
+        message: `${user.name} is now approved.`,
       });
       await loadUsers();
     } catch (approveError) {
@@ -149,6 +155,10 @@ function AdminUsersPage() {
       email: createForm.email.trim(),
       password: createForm.password,
       role: createForm.role,
+      registrationNumber: createForm.registrationNumber?.trim(),
+      panNumber: createForm.panNumber?.trim(),
+      officeAddress: createForm.officeAddress?.trim(),
+      representative: createForm.representative?.trim(),
     };
 
     if (!payload.name || !payload.email || !payload.password) {
@@ -165,6 +175,32 @@ function AdminUsersPage() {
       return;
     }
 
+    if (payload.role === "business" && (!payload.registrationNumber || !payload.panNumber)) {
+      setCreateFormErrors({
+        registrationNumber: payload.registrationNumber ? undefined : "Registration number is required",
+        panNumber: payload.panNumber ? undefined : "PAN/VAT number is required",
+      });
+      showToast({
+        tone: "error",
+        title: "Missing details",
+        message: "Business account requires registration number and PAN/VAT number.",
+      });
+      return;
+    }
+
+    if (payload.role === "government" && (!payload.officeAddress || !payload.representative)) {
+      setCreateFormErrors({
+        officeAddress: payload.officeAddress ? undefined : "Office address is required",
+        representative: payload.representative ? undefined : "Representative is required",
+      });
+      showToast({
+        tone: "error",
+        title: "Missing details",
+        message: "Government account requires office address and representative.",
+      });
+      return;
+    }
+
     setIsCreating(true);
     try {
       const createdUser = await createManagedUser(payload);
@@ -173,7 +209,16 @@ function AdminUsersPage() {
         title: "Account created",
         message: `${createdUser.name} (${createdUser.role}) is ready to use.`,
       });
-      setCreateForm({ name: "", email: "", password: "", role: "business" });
+      setCreateForm({
+        name: "",
+        email: "",
+        password: "",
+        role: "business",
+        registrationNumber: "",
+        panNumber: "",
+        officeAddress: "",
+        representative: "",
+      });
       setCreateFormErrors({});
       await loadUsers();
     } catch (createError) {
@@ -217,12 +262,25 @@ function AdminUsersPage() {
   return (
     <div className="space-y-8">
       <CardSurface className="p-6">
-        <div className="mb-5">
+        <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Create account</p>
           <h2 className="mt-2 text-2xl font-semibold text-slate-950">Add a business or government user</h2>
-          <p className="mt-2 text-sm text-slate-500">New accounts created here are accepted immediately.</p>
+          <p className="mt-2 text-sm text-slate-500">New accounts created here are approved immediately.</p>
+          </div>
+          <button
+            className="inline-flex items-center justify-center rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-500"
+            type="button"
+            onClick={() => {
+              setShowCreateForm((current) => !current);
+              setCreateFormErrors({});
+            }}
+          >
+            {showCreateForm ? "Hide create form" : "Create user manually"}
+          </button>
         </div>
 
+        {showCreateForm ? (
         <form className="grid gap-3 md:grid-cols-2" onSubmit={(event) => void handleCreateUser(event)}>
           <label className="flex flex-col gap-2 text-sm">
             <span className="font-semibold text-slate-700">Name</span>
@@ -289,7 +347,14 @@ function AdminUsersPage() {
               value={createForm.role}
               onChange={(event) => {
                 const nextValue = event.target.value as "business" | "government";
-                setCreateForm((current) => ({ ...current, role: nextValue }));
+                setCreateForm((current) => ({
+                  ...current,
+                  role: nextValue,
+                  registrationNumber: nextValue === "business" ? current.registrationNumber : "",
+                  panNumber: nextValue === "business" ? current.panNumber : "",
+                  officeAddress: nextValue === "government" ? current.officeAddress : "",
+                  representative: nextValue === "government" ? current.representative : "",
+                }));
                 if (createFormErrors.role) {
                   setCreateFormErrors((current) => ({ ...current, role: undefined }));
                 }
@@ -301,6 +366,90 @@ function AdminUsersPage() {
             {createFormErrors.role ? <span className="text-xs text-rose-600">{createFormErrors.role}</span> : null}
           </label>
 
+          {createForm.role === "business" ? (
+            <>
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="font-semibold text-slate-700">Registration number</span>
+                <input
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-400"
+                  type="text"
+                  value={createForm.registrationNumber ?? ""}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    setCreateForm((current) => ({ ...current, registrationNumber: nextValue }));
+                    if (createFormErrors.registrationNumber) {
+                      setCreateFormErrors((current) => ({ ...current, registrationNumber: undefined }));
+                    }
+                  }}
+                  placeholder="REG-12345"
+                  required
+                />
+                {createFormErrors.registrationNumber ? <span className="text-xs text-rose-600">{createFormErrors.registrationNumber}</span> : null}
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="font-semibold text-slate-700">PAN/VAT number</span>
+                <input
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-400"
+                  type="text"
+                  value={createForm.panNumber ?? ""}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    setCreateForm((current) => ({ ...current, panNumber: nextValue }));
+                    if (createFormErrors.panNumber) {
+                      setCreateFormErrors((current) => ({ ...current, panNumber: undefined }));
+                    }
+                  }}
+                  placeholder="PAN-987654"
+                  required
+                />
+                {createFormErrors.panNumber ? <span className="text-xs text-rose-600">{createFormErrors.panNumber}</span> : null}
+              </label>
+            </>
+          ) : null}
+
+          {createForm.role === "government" ? (
+            <>
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="font-semibold text-slate-700">Office address</span>
+                <input
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-400"
+                  type="text"
+                  value={createForm.officeAddress ?? ""}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    setCreateForm((current) => ({ ...current, officeAddress: nextValue }));
+                    if (createFormErrors.officeAddress) {
+                      setCreateFormErrors((current) => ({ ...current, officeAddress: undefined }));
+                    }
+                  }}
+                  placeholder="Main Secretariat, Kathmandu"
+                  required
+                />
+                {createFormErrors.officeAddress ? <span className="text-xs text-rose-600">{createFormErrors.officeAddress}</span> : null}
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="font-semibold text-slate-700">Representative</span>
+                <input
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-400"
+                  type="text"
+                  value={createForm.representative ?? ""}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    setCreateForm((current) => ({ ...current, representative: nextValue }));
+                    if (createFormErrors.representative) {
+                      setCreateFormErrors((current) => ({ ...current, representative: undefined }));
+                    }
+                  }}
+                  placeholder="Officer Jane Doe"
+                  required
+                />
+                {createFormErrors.representative ? <span className="text-xs text-rose-600">{createFormErrors.representative}</span> : null}
+              </label>
+            </>
+          ) : null}
+
           <div className="md:col-span-2">
             <button
               className="rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-500 disabled:cursor-not-allowed disabled:opacity-70"
@@ -311,6 +460,11 @@ function AdminUsersPage() {
             </button>
           </div>
         </form>
+        ) : (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+            Click <span className="font-semibold text-slate-900">Create user manually</span> to open the account creation form.
+          </div>
+        )}
       </CardSurface>
 
       <CardSurface className="p-5">
@@ -349,7 +503,7 @@ function AdminUsersPage() {
             >
               <option value="all">All statuses</option>
               <option value="pending">Pending</option>
-              <option value="accepted">Accepted</option>
+              <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
             </select>
           </label>
@@ -363,7 +517,7 @@ function AdminUsersPage() {
           <p className="mt-2 text-sm text-slate-500">Showing {paginatedUsers.length} of {filteredUsers.length} matching users.</p>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="max-h-[520px] overflow-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50/80">
               <tr className="text-left text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
@@ -389,7 +543,7 @@ function AdminUsersPage() {
                       <span
                         className={[
                           "inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ring-1 ring-inset",
-                          user.status === "accepted" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "",
+                          user.status === "approved" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "",
                           user.status === "rejected" ? "bg-rose-50 text-rose-700 ring-rose-200" : "",
                           user.status === "pending" ? "bg-amber-50 text-amber-700 ring-amber-200" : "",
                         ].join(" ")}
@@ -402,9 +556,16 @@ function AdminUsersPage() {
                         <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Protected</span>
                       ) : (
                         <div className="flex flex-wrap gap-2">
-                          {user.status !== "accepted" ? (
+                          <TableActionButton
+                            label="Details"
+                            icon="eye"
+                            tone="slate"
+                            onClick={() => setDetailsUser(user)}
+                            disabled={isBusy}
+                          />
+                          {user.status !== "approved" ? (
                             <TableActionButton
-                              label="Set accepted"
+                              label="Set approved"
                               icon="check"
                               tone="emerald"
                               onClick={() => setPendingAction({ user, action: "approve" })}
@@ -437,10 +598,10 @@ function AdminUsersPage() {
 
       <Modal
         open={Boolean(pendingAction)}
-        title={pendingAction?.action === "approve" ? "Set status to accepted" : "Set status to rejected"}
+        title={pendingAction?.action === "approve" ? "Set status to approved" : "Set status to rejected"}
         description={
           pendingAction
-            ? `Change ${pendingAction.user.name} (${pendingAction.user.email}) to ${pendingAction.action === "approve" ? "accepted" : "rejected"}?`
+            ? `Change ${pendingAction.user.name} (${pendingAction.user.email}) to ${pendingAction.action === "approve" ? "approved" : "rejected"}?`
             : undefined
         }
         onClose={() => {
@@ -470,6 +631,54 @@ function AdminUsersPage() {
             Confirm
           </button>
         </div>
+      </Modal>
+
+      <Modal
+        open={Boolean(detailsUser)}
+        title={detailsUser ? `${detailsUser.name} details` : "User details"}
+        description={detailsUser ? `${detailsUser.email} (${detailsUser.role})` : undefined}
+        onClose={() => setDetailsUser(null)}
+      >
+        {detailsUser ? (
+          <div className="space-y-4 text-sm text-slate-700">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p><span className="font-semibold">Status:</span> {detailsUser.status}</p>
+              {detailsUser.role === "business" ? (
+                <>
+                  <p className="mt-2"><span className="font-semibold">Registration Number:</span> {detailsUser.businessInfo?.registrationNumber || "N/A"}</p>
+                  <p><span className="font-semibold">PAN/VAT Number:</span> {detailsUser.businessInfo?.panNumber || "N/A"}</p>
+                </>
+              ) : null}
+              {detailsUser.role === "government" ? (
+                <>
+                  <p className="mt-2"><span className="font-semibold">Office Address:</span> {detailsUser.governmentInfo?.officeAddress || "N/A"}</p>
+                  <p><span className="font-semibold">Representative:</span> {detailsUser.governmentInfo?.representative || "N/A"}</p>
+                </>
+              ) : null}
+            </div>
+
+            <div>
+              <p className="font-semibold text-slate-900">Verification Documents</p>
+              {detailsUser.verificationDocs.length === 0 ? (
+                <p className="mt-2 text-slate-500">No verification documents uploaded.</p>
+              ) : (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {detailsUser.verificationDocs.map((document) => (
+                    <a
+                      className="inline-flex items-center rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
+                      href={document.url}
+                      key={document.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {document.originalname}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
       </Modal>
     </div>
   );

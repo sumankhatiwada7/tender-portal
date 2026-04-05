@@ -85,5 +85,15 @@ export function parseAuthError(error: unknown): ParsedAuthError {
 }
 
 function isAuthField(value: string): value is FieldPath<AuthFormValues> {
-  return value === "name" || value === "email" || value === "password" || value === "role";
+  return (
+    value === "name" ||
+    value === "email" ||
+    value === "password" ||
+    value === "role" ||
+    value === "registrationNumber" ||
+    value === "panNumber" ||
+    value === "officeAddress" ||
+    value === "representative" ||
+    value === "verificationDocs"
+  );
 }

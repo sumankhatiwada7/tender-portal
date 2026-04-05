@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { clearSession, getHomeRouteForRole, loadSession } from "../features/auth/auth.utils";
 import type { TenderItem } from "../features/dashboard/dashboard.types";
 import { formatCurrency, formatDate } from "../features/dashboard/dashboard.utils";
 import { fetchPublicTenders, sortOpenFirst } from "../features/tenders/publicTenders.api";
@@ -99,8 +100,14 @@ const steps: StepItem[] = [
 
 function LandingPage() {
   const navigate = useNavigate();
+  const session = loadSession();
   const [searchTerm, setSearchTerm] = useState("");
   const [featuredTenders, setFeaturedTenders] = useState<TenderItem[]>([]);
+
+  function handleLogout() {
+    clearSession();
+    navigate("/", { replace: true });
+  }
 
   useEffect(() => {
     async function loadFeaturedTenders() {
@@ -144,12 +151,32 @@ function LandingPage() {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link className="hidden rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950 sm:inline-flex" to="/login">
-              Login
-            </Link>
-            <Link className="inline-flex rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800" to="/register">
-              Register
-            </Link>
+            {session ? (
+              <>
+                <Link
+                  className="hidden rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950 sm:inline-flex"
+                  to={getHomeRouteForRole(session.user.role)}
+                >
+                  Go to workspace
+                </Link>
+                <button
+                  className="inline-flex rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800"
+                  type="button"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link className="hidden rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950 sm:inline-flex" to="/login">
+                  Login
+                </Link>
+                <Link className="inline-flex rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800" to="/register">
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -174,9 +201,18 @@ function LandingPage() {
                 Browse Tenders
                 <AppIcon className="h-4 w-4" name="arrow" />
               </Link>
-              <Link className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3.5 text-base font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950" to="/register">
-                Register as Business
-              </Link>
+              {session ? (
+                <Link
+                  className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3.5 text-base font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950"
+                  to={getHomeRouteForRole(session.user.role)}
+                >
+                  Go to your workspace
+                </Link>
+              ) : (
+                <Link className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3.5 text-base font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950" to="/register">
+                  Register as Business
+                </Link>
+              )}
             </div>
 
             <form
@@ -415,8 +451,11 @@ function LandingPage() {
                   <p className="mt-4 text-lg leading-8 text-sky-50/88">Join a platform designed to help governments publish with confidence and businesses compete with clarity.</p>
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-                  <Link className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3.5 text-base font-semibold text-slate-950 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100" to="/register">
-                    Get Started
+                  <Link
+                    className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3.5 text-base font-semibold text-slate-950 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100"
+                    to={session ? getHomeRouteForRole(session.user.role) : "/register"}
+                  >
+                    {session ? "Go to workspace" : "Get Started"}
                   </Link>
                   <Link className="inline-flex items-center justify-center rounded-full border border-white/20 px-6 py-3.5 text-base font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10" to="/login">
                     Login

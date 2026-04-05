@@ -1,6 +1,8 @@
 import express from "express";
 import { authMiddleware, authorizeRoles } from "../auth/auth.middleware";
 import { CreateTender,GetTenderById, GetAllTenders, GetPublicTenders, DeleteTender, UpdateTender } from "./tender.controller";
+import { createBid } from "../bid/bid.controller";
+import { uploadDocument, handleUploadError } from "../../core/upload/upload.middleware";
 import  { roles } from "../auth/authtype";
 const router= express.Router();
 
@@ -42,7 +44,53 @@ router.get("/public/:id", GetTenderById);
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  */
-router.post("/create", authMiddleware, authorizeRoles(roles.government), CreateTender);
+router.post(
+	"/create",
+	authMiddleware,
+	authorizeRoles(roles.government),
+	(req, res, next) => {
+		uploadDocument.array("documents", 5)(req, res, (error) => {
+			if (error) {
+				return handleUploadError(error, res);
+			}
+
+			next();
+		});
+	},
+	CreateTender
+);
+
+router.post(
+	"/",
+	authMiddleware,
+	authorizeRoles(roles.government),
+	(req, res, next) => {
+		uploadDocument.array("documents", 5)(req, res, (error) => {
+			if (error) {
+				return handleUploadError(error, res);
+			}
+
+			next();
+		});
+	},
+	CreateTender
+);
+
+router.post(
+	"/:tenderid/bid",
+	authMiddleware,
+	authorizeRoles(roles.business),
+	(req, res, next) => {
+		uploadDocument.array("documents", 3)(req, res, (error) => {
+			if (error) {
+				return handleUploadError(error, res);
+			}
+
+			next();
+		});
+	},
+	createBid
+);
 
 /**
  * @swagger
@@ -141,7 +189,21 @@ router.get("/", authMiddleware, GetAllTenders);
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  */
-router.put("/update/:id", authMiddleware, authorizeRoles(roles.government), UpdateTender);
+router.put(
+	"/update/:id",
+	authMiddleware,
+	authorizeRoles(roles.government),
+	(req, res, next) => {
+		uploadDocument.array("documents", 5)(req, res, (error) => {
+			if (error) {
+				return handleUploadError(error, res);
+			}
+
+			next();
+		});
+	},
+	UpdateTender
+);
 
 /**
  * @swagger

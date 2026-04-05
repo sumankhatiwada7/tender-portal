@@ -12,4 +12,9 @@ router.post("/create-user", authMiddleware, authorizeRoles(roles.admin), createu
 router.post("/approve-user/:id", authMiddleware, authorizeRoles(roles.admin), approvedUser);
 router.post("/reject-user/:id", authMiddleware, authorizeRoles(roles.admin), rejectUser);
 
+// Contract-aligned routes
+router.get("/users/pending", authMiddleware, authorizeRoles(roles.admin), getPendingUsers);
+router.patch("/users/:id/approve", authMiddleware, authorizeRoles(roles.admin), approvedUser);
+router.patch("/users/:id/reject", authMiddleware, authorizeRoles(roles.admin), rejectUser);
+
 export default router;

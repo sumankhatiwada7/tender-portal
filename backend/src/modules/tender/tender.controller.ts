@@ -1,6 +1,6 @@
 import type { apitype } from "../../core/types/apitype";
 import type { errorstype } from "../../core/types/errorstype";
-import type { tenderDocument,tenderlist,tenderResponse,tenderListResponse,tenderStatus,updateTenderInput } from "./tendertype";
+import type { tenderDocument,tenderlist,tenderResponse,tenderListResponse,tenderStatus,updateTenderInput, uploadDocument } from "./tendertype";
 import Tender from "./tender.model";
 
 function toTenderListItem(tender: tenderDocument): tenderlist {
@@ -19,14 +19,58 @@ function toTenderListItem(tender: tenderDocument): tenderlist {
     }
 }
 
-function normalizeDocuments(value: unknown): string[] {
+type uploadedFileInput = {
+    path?: string;
+    secure_url?: string;
+    originalname?: string;
+};
+
+function normalizeDocuments(value: unknown): uploadDocument[] {
     if (!Array.isArray(value)) {
         return [];
     }
 
     return value
-        .map((document) => String(document ?? "").trim())
-        .filter(Boolean);
+        .map((document) => {
+            if (typeof document !== "object" || !document) {
+                return null;
+            }
+
+            const doc = document as uploadDocument;
+            const url = String(doc.url ?? "").trim();
+            const originalname = String(doc.originalname ?? "").trim();
+            const uploadedAt = doc.uploadedAt ? new Date(doc.uploadedAt) : new Date();
+
+            if (!url || !originalname || Number.isNaN(uploadedAt.getTime())) {
+                return null;
+            }
+
+            return {
+                url,
+                originalname,
+                uploadedAt,
+            };
+        })
+        .filter((doc): doc is uploadDocument => Boolean(doc));
+}
+
+function mapUploadedDocuments(files: uploadedFileInput[]): uploadDocument[] {
+    return files
+        .map((file) => {
+            const url = String(file.path || file.secure_url || "").trim();
+            const originalname = String(file.originalname || "").trim();
+
+            if (!url || !originalname) {
+                return null;
+            }
+
+            return {
+                url,
+                originalname,
+                uploadedAt: new Date(),
+            };
+        })
+        .filter((doc): doc is uploadDocument => Boolean(doc));
 }
 
 export async function CreateTender(req: any, res: any) {
@@ -39,7 +83,10 @@ export async function CreateTender(req: any, res: any) {
      const deadline = data.deadline;
      const parsedDeadline = new Date(deadline);
      const budget = Number(data.budget);
-     const documents = normalizeDocuments(data.documents);
+      const uploadedFiles = (Array.isArray(req.files) ? req.files : []) as uploadedFileInput[];
+      const documents = uploadedFiles.length > 0
+          ? mapUploadedDocuments(uploadedFiles)
+          : normalizeDocuments(data.documents);
      const createdBy = req.user?.id;
      const status:tenderStatus = "open";
      const errors: NonNullable<errorstype["errors"]> = [];
@@ -261,7 +308,12 @@ export async function UpdateTender(req: any, res: any) {
         if (data.status !== undefined) updateData.status = data.status;
         if (data.category !== undefined) updateData.category = String(data.category).trim();
         if (data.location !== undefined) updateData.location = String(data.location).trim();
-        if (data.documents !== undefined) updateData.documents = normalizeDocuments(data.documents);
+        const uploadedFiles = (Array.isArray(req.files) ? req.files : []) as uploadedFileInput[];
+        if (uploadedFiles.length > 0) {
+            updateData.documents = mapUploadedDocuments(uploadedFiles);
+        } else if (data.documents !== undefined) {
+            updateData.documents = normalizeDocuments(data.documents);
+        }
 
         const tender1 = await Tender.findByIdAndUpdate(id, updateData, {
             new: true,

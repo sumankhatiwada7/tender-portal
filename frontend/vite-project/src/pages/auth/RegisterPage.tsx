@@ -16,6 +16,7 @@ function RegisterPage() {
 
   const {
     register,
+    watch,
     handleSubmit,
     setError,
     clearErrors,
@@ -26,6 +27,11 @@ function RegisterPage() {
       email: "",
       password: "",
       role: "business",
+      registrationNumber: "",
+      panNumber: "",
+      officeAddress: "",
+      representative: "",
+      verificationDocs: null,
     },
   });
 
@@ -51,18 +57,40 @@ function RegisterPage() {
     });
   }
 
+  const roleValue = watch("role");
+  const verificationDocsRegistration = registerField("verificationDocs", {
+    validate: (fileList) =>
+      (fileList && fileList.length > 0) || "Verification documents are required",
+  });
+
   async function onSubmit(values: AuthFormValues) {
     clearErrors();
     setFormError(null);
     setExtraErrors([]);
 
     try {
-      await axios.post<RegisterResponse>(`${AUTH_BASE_PATH}/register`, {
-        name: values.name.trim(),
-        email: values.email.trim(),
-        password: values.password,
-        role: values.role,
-      });
+      const formData = new FormData();
+      formData.append("name", values.name.trim());
+      formData.append("email", values.email.trim());
+      formData.append("password", values.password);
+      formData.append("role", values.role);
+
+      if (values.role === "business") {
+        formData.append("registrationNumber", values.registrationNumber.trim());
+        formData.append("panNumber", values.panNumber.trim());
+      }
+
+      if (values.role === "government") {
+        formData.append("officeAddress", values.officeAddress.trim());
+        formData.append("representative", values.representative.trim());
+      }
+
+      const files = Array.from(values.verificationDocs ?? []);
+      for (const file of files) {
+        formData.append("verificationDocs", file);
+      }
+
+      await axios.post<RegisterResponse>(`${AUTH_BASE_PATH}/register`, formData);
 
       navigate(`/login?registered=1&email=${encodeURIComponent(values.email.trim())}`, {
         replace: true,
@@ -156,6 +184,77 @@ function RegisterPage() {
             }`}
           >
             <span className="overflow-hidden text-sm text-red-600">{errors.role?.message ?? ""}</span>
+          </div>
+        </label>
+
+        {roleValue === "business" ? (
+          <>
+            <InputField
+              autoComplete="off"
+              type="text"
+              label="Business registration number"
+              placeholder="REG-12345"
+              registration={registerField("registrationNumber", { required: "Registration number is required" })}
+              error={errors.registrationNumber?.message}
+              onValueChange={() => clearFeedback("registrationNumber")}
+            />
+
+            <InputField
+              autoComplete="off"
+              type="text"
+              label="PAN/VAT number"
+              placeholder="PAN-987654"
+              registration={registerField("panNumber", { required: "PAN/VAT number is required" })}
+              error={errors.panNumber?.message}
+              onValueChange={() => clearFeedback("panNumber")}
+            />
+          </>
+        ) : null}
+
+        {roleValue === "government" ? (
+          <>
+            <InputField
+              autoComplete="street-address"
+              type="text"
+              label="Office address"
+              placeholder="Main Secretariat, Kathmandu"
+              registration={registerField("officeAddress", { required: "Office address is required" })}
+              error={errors.officeAddress?.message}
+              onValueChange={() => clearFeedback("officeAddress")}
+            />
+
+            <InputField
+              autoComplete="name"
+              type="text"
+              label="Representative name"
+              placeholder="Officer Jane Doe"
+              registration={registerField("representative", { required: "Representative is required" })}
+              error={errors.representative?.message}
+              onValueChange={() => clearFeedback("representative")}
+            />
+          </>
+        ) : null}
+
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium text-slate-700">Verification documents</span>
+          <input
+            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+            type="file"
+            multiple
+            accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+            {...verificationDocsRegistration}
+            onChange={(event) => {
+              verificationDocsRegistration.onChange(event);
+              clearFeedback("verificationDocs");
+            }}
+          />
+          <p className="mt-2 text-xs text-slate-500">Upload up to 5 files, maximum 10MB each.</p>
+          <div
+            className={`grid transition-all duration-200 ${
+              errors.verificationDocs?.message ? "mt-2 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+            }`}
+          >
+            <span className="overflow-hidden text-sm text-red-600">{errors.verificationDocs?.message ?? ""}</span>
           </div>
         </label>
 

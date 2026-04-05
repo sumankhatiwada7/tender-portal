@@ -8,6 +8,11 @@ export type AuthFormValues = {
   email: string;
   password: string;
   role: RoleOption;
+  registrationNumber: string;
+  panNumber: string;
+  officeAddress: string;
+  representative: string;
+  verificationDocs: FileList | null;
 };
 
 export type ApiErrorResponse = {

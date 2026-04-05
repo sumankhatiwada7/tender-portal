@@ -20,8 +20,8 @@ export async function createAdminifnotexists() {
             updates.role = "admin";
         }
 
-        if (existingAdmin.status !== "accepted") {
-            updates.status = "accepted";
+        if (existingAdmin.status !== "approved") {
+            updates.status = "approved";
         }
 
         if (Object.keys(updates).length > 0) {
@@ -39,7 +39,7 @@ export async function createAdminifnotexists() {
         email: normalizedEmail,
         password: hashedpassword,
         role: "admin",
-        status:"accepted"
+        status:"approved"
     });
 
     console.log("Admin user created successfully.");

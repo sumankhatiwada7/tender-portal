@@ -1,4 +1,4 @@
-import { BidDocument, bidlist, bidlistResponse, bidListResponses } from "./bidtype";
+import { BidDocument, bidlist, bidlistResponse, bidListResponses, uploadDocument } from "./bidtype";
 import type { apitype } from "../../core/types/apitype";
 import { errorstype } from "../../core/types/errorstype";
 import { bid } from "./bid.model";
@@ -21,8 +21,34 @@ function tolistitem(bid: BidDocument): bidlist {
         businessEmail: businessDetails?.email,
         proposal: bid.proposal,
         amount: bid.amount,
-        status: bid.status
+        status: bid.status,
+        documents: Array.isArray((bid as any).documents) ? (bid as any).documents : []
     }
+}
+
+type uploadedFileInput = {
+    path?: string;
+    secure_url?: string;
+    originalname?: string;
+};
+
+function mapUploadedDocuments(files: uploadedFileInput[]): uploadDocument[] {
+    return files
+        .map((file) => {
+            const url = String(file.path || file.secure_url || "").trim();
+            const originalname = String(file.originalname || "").trim();
+
+            if (!url || !originalname) {
+                return null;
+            }
+
+            return {
+                url,
+                originalname,
+                uploadedAt: new Date(),
+            };
+        })
+        .filter((doc): doc is uploadDocument => Boolean(doc));
 }
 
 export async function createBid(req: any, res: any) {
@@ -30,8 +56,10 @@ export async function createBid(req: any, res: any) {
         const businessid = req.user.id;
         const tenderid = req.params.tenderid;
         const data = req.body || {};
+        const files = (Array.isArray(req.files) ? req.files : []) as uploadedFileInput[];
         const proposal = data.proposal;
         const amount = data.amount;
+        const documents = mapUploadedDocuments(files);
         const errors: NonNullable<errorstype["errors"]> = [];
         if (!proposal) errors.push({ field: "proposal", message: "Proposal is required" });
         if (!amount) errors.push({ field: "amount", message: "Amount is required" });
@@ -43,7 +71,7 @@ export async function createBid(req: any, res: any) {
             const payload: apitype = { message: "Bid already exists for this tender", sucess: false }
             return res.status(400).json(payload);
         }
-        const newBid = new bid({ businessId: businessid, tenderId: tenderid, proposal, amount });
+        const newBid = new bid({ businessId: businessid, tenderId: tenderid, proposal, amount, documents });
         await newBid.save();
         const createdBid = await bid.findById(newBid._id).populate("businessId", "name email");
         const payload: bidlistResponse = {

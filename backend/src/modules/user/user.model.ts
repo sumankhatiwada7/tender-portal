@@ -1,5 +1,25 @@
 import mongoose from "mongoose";
 
+const uploadedDocumentSchema = new mongoose.Schema(
+    {
+        url: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        originalname: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        uploadedAt: {
+            type: Date,
+            default: Date.now,
+        },
+    },
+    { _id: false }
+);
+
 const userSchema = new mongoose.Schema({
     name:{
         type:String,
@@ -24,9 +44,42 @@ const userSchema = new mongoose.Schema({
     },
     status:{
         type:String,
-        enum:["accepted","rejected","pending"],
+        enum:["approved","rejected","pending"],
         default:"pending"
-    }
+    },
+    profileImage: {
+        type: String,
+        default: null,
+        trim: true,
+    },
+    verificationDocs: {
+        type: [uploadedDocumentSchema],
+        default: [],
+    },
+    businessInfo: {
+        registrationNumber: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+        panNumber: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+    },
+    governmentInfo: {
+        officeAddress: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+        representative: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+    },
 })
 
 export const User = mongoose.model("User", userSchema)

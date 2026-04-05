@@ -20,7 +20,7 @@ function TenderForm({
   onCancel,
   allowStatusChange = false,
 }: TenderFormProps) {
-  const [documentNames, setDocumentNames] = useState<string[]>(initialTender?.documents ?? []);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -72,7 +72,7 @@ function TenderForm({
         deadline: values.deadline,
         category: values.category.trim(),
         location: values.location.trim(),
-        documents: documentNames,
+        documents: selectedFiles,
         status: allowStatusChange ? values.status : undefined,
       });
     } catch (error) {
@@ -203,22 +203,33 @@ function TenderForm({
               multiple
               onChange={(event) => {
                 const files = Array.from(event.target.files ?? []);
-                setDocumentNames(files.map((file) => file.name));
+                setSelectedFiles(files);
                 clearFeedback();
               }}
             />
           </label>
           <p className="mt-3 text-sm text-slate-500">
-            Document names will be saved with the tender. Supported by the current backend flow.
+            Upload up to 5 files. Supported formats: pdf, doc, docx.
           </p>
-          {documentNames.length > 0 ? (
+          {selectedFiles.length > 0 ? (
             <div className="mt-4 flex flex-wrap gap-2">
-              {documentNames.map((documentName) => (
+              {selectedFiles.map((file) => (
                 <span
                   className="rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700"
-                  key={documentName}
+                  key={file.name}
                 >
-                  {documentName}
+                  {file.name}
+                </span>
+              ))}
+            </div>
+          ) : initialTender?.documents && initialTender.documents.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {initialTender.documents.map((document) => (
+                <span
+                  className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
+                  key={document.url}
+                >
+                  {document.originalname}
                 </span>
               ))}
             </div>

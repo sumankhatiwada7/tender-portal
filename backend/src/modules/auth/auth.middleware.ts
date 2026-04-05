@@ -36,7 +36,7 @@ export const authMiddleware = (req: authrequest, res: Response, next: NextFuncti
         next();
 
     } catch (_error) {
-        console.log(_error);
+        console.error(_error);
         const payload: apitype = {
             message: "Invalid token",
             sucess: false

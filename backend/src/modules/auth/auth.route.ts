@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import { Register, Login } from './auth.controller';
+import { uploadVerification, handleUploadError } from '../../core/upload/upload.middleware';
 
 /**
  * @swagger
@@ -29,7 +30,19 @@ import { Register, Login } from './auth.controller';
  *             schema:
  *               $ref: '#/components/schemas/ValidationErrorResponse'
  */
-router.post('/register',Register);
+router.post(
+	'/register',
+	(req, res, next) => {
+		uploadVerification.array("verificationDocs", 5)(req, res, (error) => {
+			if (error) {
+				return handleUploadError(error, res);
+			}
+
+			next();
+		});
+	},
+	Register
+);
 
 /**
  * @swagger

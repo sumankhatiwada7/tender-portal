@@ -41,7 +41,16 @@ function toFieldErrors(rawErrors: unknown): AdminFieldErrors {
       continue;
     }
 
-    if (item.field === "name" || item.field === "email" || item.field === "password" || item.field === "role") {
+    if (
+      item.field === "name" ||
+      item.field === "email" ||
+      item.field === "password" ||
+      item.field === "role" ||
+      item.field === "registrationNumber" ||
+      item.field === "panNumber" ||
+      item.field === "officeAddress" ||
+      item.field === "representative"
+    ) {
       mapped[item.field] = item.message;
     }
   }
@@ -75,9 +84,22 @@ function toAdminUser(raw: {
   email?: string;
   role?: string;
   status?: string;
+  businessInfo?: {
+    registrationNumber?: string;
+    panNumber?: string;
+  };
+  governmentInfo?: {
+    officeAddress?: string;
+    representative?: string;
+  };
+  verificationDocs?: Array<{
+    url?: string;
+    originalname?: string;
+    uploadedAt?: string;
+  }>;
 }): AdminUser {
   const role = raw.role === "admin" || raw.role === "government" || raw.role === "business" ? raw.role : "business";
-  const status = raw.status === "accepted" || raw.status === "rejected" || raw.status === "pending" ? raw.status : "pending";
+  const status = raw.status === "approved" || raw.status === "rejected" || raw.status === "pending" ? raw.status : "pending";
 
   return {
     id: raw.id ?? raw._id ?? "",
@@ -85,12 +107,29 @@ function toAdminUser(raw: {
     email: raw.email ?? "N/A",
     role,
     status,
+    businessInfo: {
+      registrationNumber: raw.businessInfo?.registrationNumber,
+      panNumber: raw.businessInfo?.panNumber,
+    },
+    governmentInfo: {
+      officeAddress: raw.governmentInfo?.officeAddress,
+      representative: raw.governmentInfo?.representative,
+    },
+    verificationDocs: Array.isArray(raw.verificationDocs)
+      ? raw.verificationDocs
+          .filter((doc) => Boolean(doc?.url) && Boolean(doc?.originalname))
+          .map((doc) => ({
+            url: String(doc.url),
+            originalname: String(doc.originalname),
+            uploadedAt: doc.uploadedAt,
+          }))
+      : [],
   };
 }
 
 export async function fetchPendingUsers() {
   try {
-    const response = await axios.get<AdminUsersResponse>(`${ADMIN_BASE_PATH}/pending-users`, getAuthorizedConfig());
+    const response = await axios.get<AdminUsersResponse>(`${ADMIN_BASE_PATH}/users/pending`, getAuthorizedConfig());
     return (response.data.users ?? []).map(toAdminUser).filter((user) => user.id);
   } catch (error) {
     throw normalizeApiFailure(error, "Unable to load pending users.");
@@ -108,7 +147,7 @@ export async function fetchAllUsers() {
 
 export async function approveUser(userId: string) {
   try {
-    await axios.post<AdminApiMessage>(`${ADMIN_BASE_PATH}/approve-user/${userId}`, {}, getAuthorizedConfig());
+    await axios.patch<AdminApiMessage>(`${ADMIN_BASE_PATH}/users/${userId}/approve`, {}, getAuthorizedConfig());
   } catch (error) {
     throw normalizeApiFailure(error, "Unable to approve this user.");
   }
@@ -116,7 +155,7 @@ export async function approveUser(userId: string) {
 
 export async function rejectUser(userId: string) {
   try {
-    await axios.post<AdminApiMessage>(`${ADMIN_BASE_PATH}/reject-user/${userId}`, {}, getAuthorizedConfig());
+    await axios.patch<AdminApiMessage>(`${ADMIN_BASE_PATH}/users/${userId}/reject`, {}, getAuthorizedConfig());
   } catch (error) {
     throw normalizeApiFailure(error, "Unable to reject this user.");
   }

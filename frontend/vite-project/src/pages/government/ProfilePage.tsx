@@ -1,9 +1,46 @@
 import { Link, useOutletContext } from "react-router-dom";
+import { useState } from "react";
+import axios from "axios";
+import { API_BASE_URL } from "../../features/auth/auth.config";
 import { CardSurface, DashboardIcon } from "../../features/dashboard/components/DashboardUi";
 import type { GovernmentOutletContext } from "../../features/dashboard/dashboard.types";
 
 function ProfilePage() {
   const { session, onLogout } = useOutletContext<GovernmentOutletContext>();
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+
+  async function handleProfileImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await axios.post<{ url?: string }>(`${API_BASE_URL}/api/v1/upload/profile-image`, formData, {
+        headers: {
+          Authorization: `Bearer ${session.token}`,
+        },
+      });
+
+      setUploadedImageUrl(response.data.url ?? null);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        setUploadError(String(error.response?.data?.message ?? "Unable to upload profile image."));
+      } else {
+        setUploadError("Unable to upload profile image.");
+      }
+    } finally {
+      setUploading(false);
+    }
+  }
 
   return (
     <div className="grid gap-8 xl:grid-cols-[1fr_0.9fr]">
@@ -15,6 +52,28 @@ function ProfilePage() {
         </p>
 
         <div className="mt-8 grid gap-5 md:grid-cols-2">
+          <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4 md:col-span-2">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Profile image</p>
+            {uploadedImageUrl ? (
+              <img
+                className="mt-3 h-20 w-20 rounded-full border border-slate-200 object-cover"
+                src={uploadedImageUrl}
+                alt="Profile"
+              />
+            ) : null}
+            <label className="mt-3 inline-flex cursor-pointer items-center justify-center rounded-full bg-sky-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-sky-500">
+              {uploading ? "Uploading..." : "Upload image"}
+              <input
+                className="hidden"
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp"
+                onChange={(event) => void handleProfileImageUpload(event)}
+                disabled={uploading}
+              />
+            </label>
+            {uploadError ? <p className="mt-2 text-xs text-rose-600">{uploadError}</p> : null}
+          </div>
+
           <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4">
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Full name</p>
             <p className="mt-2 text-lg font-semibold text-slate-950">{session.user.name}</p>

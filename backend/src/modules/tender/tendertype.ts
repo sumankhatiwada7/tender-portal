@@ -3,6 +3,12 @@ import { Document, Types } from "mongoose";
 
 export type tenderStatus = "open" | "closed" | "awarded" ;;
 
+export type uploadDocument = {
+    url: string,
+    originalname: string,
+    uploadedAt: Date,
+}
+
 
 export interface tenderDocument extends Document{
     _id:Types.ObjectId,
@@ -12,7 +18,7 @@ export interface tenderDocument extends Document{
     budget:number,
     category:string,
     location:string,
-    documents:string[],
+    documents:uploadDocument[],
     createdBy:string,
     status:tenderStatus
     awardedto?:Types.ObjectId
@@ -25,7 +31,7 @@ export type tenderlist ={
     budget:number,
     category:string,
     location:string,
-    documents:string[],
+    documents:uploadDocument[],
     createdBy:string,
     status:tenderStatus
     awardedto?:string

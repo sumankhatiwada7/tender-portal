@@ -73,7 +73,7 @@ export async function approvedUser(req:any,res:any){
                 return res.status(404).json(payload)
             }
 
-            if(approvedUser.status=="accepted"){
+            if(approvedUser.status=="approved"){
                 const payload:apitype={
                     message:"user is already approved",
                     sucess:false
@@ -81,7 +81,7 @@ export async function approvedUser(req:any,res:any){
                 return res.status(400).json(payload)
             }
 
-            approvedUser.status="accepted"
+            approvedUser.status="approved"
             await approvedUser.save()
 
             const t = templates.accountApproved(approvedUser.name);
@@ -155,6 +155,24 @@ export async function createuser(req:any,res:any){
               if (data.role !== undefined && role !== "government" && role !== "business") {
                   errors.push({ field: "role", message: "Role must be either government or business" });
               }
+
+              if (role === "business") {
+                  if (!String(data.registrationNumber ?? "").trim()) {
+                      errors.push({ field: "registrationNumber", message: "Registration number is required" });
+                  }
+                  if (!String(data.panNumber ?? "").trim()) {
+                      errors.push({ field: "panNumber", message: "PAN/VAT number is required" });
+                  }
+              }
+
+              if (role === "government") {
+                  if (!String(data.officeAddress ?? "").trim()) {
+                      errors.push({ field: "officeAddress", message: "Office address is required" });
+                  }
+                  if (!String(data.representative ?? "").trim()) {
+                      errors.push({ field: "representative", message: "Representative is required" });
+                  }
+              }
       
               if (errors.length > 0) {
                   const payload: errorstype = {
@@ -183,7 +201,21 @@ export async function createuser(req:any,res:any){
                   email: String(email).trim(),
                   password: hashedpassword,
                   role: finalRole,
-                  status:"accepted"
+                                    status:"approved",
+                                    businessInfo: finalRole === "business" ? {
+                                        registrationNumber: String(data.registrationNumber ?? "").trim(),
+                                        panNumber: String(data.panNumber ?? "").trim(),
+                                    } : {
+                                        registrationNumber: "",
+                                        panNumber: "",
+                                    },
+                                    governmentInfo: finalRole === "government" ? {
+                                        officeAddress: String(data.officeAddress ?? "").trim(),
+                                        representative: String(data.representative ?? "").trim(),
+                                    } : {
+                                        officeAddress: "",
+                                        representative: "",
+                                    },
               });
       
               const payload: userresponse = {

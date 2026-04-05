@@ -136,6 +136,7 @@ function AdminApprovalsPage() {
                   <th className="px-6 py-4">Name</th>
                   <th className="px-6 py-4">Email</th>
                   <th className="px-6 py-4">Role</th>
+                  <th className="px-6 py-4">Verification docs</th>
                   <th className="px-6 py-4">Actions</th>
                 </tr>
               </thead>
@@ -148,6 +149,25 @@ function AdminApprovalsPage() {
                       <td className="px-6 py-5 font-semibold text-slate-900">{user.name}</td>
                       <td className="px-6 py-5 text-sm text-slate-600">{user.email}</td>
                       <td className="px-6 py-5 text-sm capitalize text-slate-700">{user.role}</td>
+                      <td className="px-6 py-5 text-sm text-slate-600">
+                        {user.verificationDocs.length === 0 ? (
+                          <span className="text-slate-400">No documents</span>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {user.verificationDocs.map((document) => (
+                              <a
+                                className="inline-flex items-center rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
+                                href={document.url}
+                                key={`${user.id}-${document.url}`}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {document.originalname}
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </td>
                       <td className="px-6 py-5">
                         <div className="flex flex-wrap gap-2">
                           <TableActionButton

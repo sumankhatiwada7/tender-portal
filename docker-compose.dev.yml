@@ -26,6 +26,8 @@ services:
       PORT: 5000
       MONGODB_URI: mongodb://mongodb:27017/queue_system
       CHOKIDAR_USEPOLLING: "true"
+    env_file:
+      - ./backend/.env
     command: sh -c "npm ci && npx nodemon -L --watch src --ext ts --exec 'ts-node src/index.ts'"
     ports:
       - "5000:5000"

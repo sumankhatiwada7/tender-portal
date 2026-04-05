@@ -37,3 +37,6 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Personal Copilot customizations
+.github/agents/queue-system-dev.agent.md

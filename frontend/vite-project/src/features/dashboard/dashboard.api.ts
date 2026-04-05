@@ -47,7 +47,23 @@ export async function fetchTenders() {
 
 export async function createTender(input: TenderMutationInput) {
   try {
-    const response = await axios.post<TenderResponse>(`${TENDER_BASE_PATH}/create`, input, getAuthorizedConfig());
+    const formData = new FormData();
+    formData.append("title", input.title);
+    formData.append("description", input.description);
+    formData.append("budget", String(input.budget));
+    formData.append("deadline", input.deadline);
+    formData.append("category", input.category);
+    formData.append("location", input.location);
+
+    if (input.status) {
+      formData.append("status", input.status);
+    }
+
+    for (const file of input.documents) {
+      formData.append("documents", file);
+    }
+
+    const response = await axios.post<TenderResponse>(`${TENDER_BASE_PATH}`, formData, getAuthorizedConfig());
     return response.data.tender as TenderItem;
   } catch (error) {
     throw normalizeApiFailure(error, "Unable to create the tender.");
@@ -56,7 +72,23 @@ export async function createTender(input: TenderMutationInput) {
 
 export async function updateTender(id: string, input: TenderMutationInput) {
   try {
-    const response = await axios.put<TenderResponse>(`${TENDER_BASE_PATH}/update/${id}`, input, getAuthorizedConfig());
+    const formData = new FormData();
+    formData.append("title", input.title);
+    formData.append("description", input.description);
+    formData.append("budget", String(input.budget));
+    formData.append("deadline", input.deadline);
+    formData.append("category", input.category);
+    formData.append("location", input.location);
+
+    if (input.status) {
+      formData.append("status", input.status);
+    }
+
+    for (const file of input.documents) {
+      formData.append("documents", file);
+    }
+
+    const response = await axios.put<TenderResponse>(`${TENDER_BASE_PATH}/update/${id}`, formData, getAuthorizedConfig());
     return response.data.tender as TenderItem;
   } catch (error) {
     throw normalizeApiFailure(error, "Unable to update the tender.");

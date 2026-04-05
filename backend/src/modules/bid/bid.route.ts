@@ -2,6 +2,7 @@ import express from 'express';
 import { authMiddleware, authorizeRoles } from '../auth/auth.middleware';
 import { createBid,getBidsForTender,getBidsbyidfortender,acceptbid,rejectbid } from './bid.controller';
 import { roles } from "../auth/authtype";
+import { uploadDocument, handleUploadError } from '../../core/upload/upload.middleware';
 
 const router = express.Router();
 
@@ -49,7 +50,21 @@ const router = express.Router();
  *               $ref: '#/components/schemas/ApiResponse'
  */
 
-router.post('/create/:tenderid', authMiddleware, authorizeRoles(roles.business), createBid);
+router.post(
+	'/create/:tenderid',
+	authMiddleware,
+	authorizeRoles(roles.business),
+	(req, res, next) => {
+		uploadDocument.array("documents", 3)(req, res, (error) => {
+			if (error) {
+				return handleUploadError(error, res);
+			}
+
+			next();
+		});
+	},
+	createBid
+);
 /**
  * @swagger
  * /api/v1/bid/tender/{tenderid}:

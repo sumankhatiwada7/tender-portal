@@ -1,7 +1,7 @@
 import type { SessionState } from "../auth/auth.types";
 
 export type AdminUserRole = "admin" | "government" | "business";
-export type AdminUserStatus = "accepted" | "rejected" | "pending";
+export type AdminUserStatus = "approved" | "rejected" | "pending";
 
 export type AdminUser = {
   id: string;
@@ -9,6 +9,19 @@ export type AdminUser = {
   email: string;
   role: AdminUserRole;
   status: AdminUserStatus;
+  businessInfo?: {
+    registrationNumber?: string;
+    panNumber?: string;
+  };
+  governmentInfo?: {
+    officeAddress?: string;
+    representative?: string;
+  };
+  verificationDocs: Array<{
+    url: string;
+    originalname: string;
+    uploadedAt?: string;
+  }>;
 };
 
 export type AdminUsersResponse = {
@@ -22,6 +35,19 @@ export type AdminUsersResponse = {
     email?: string;
     role?: string;
     status?: string;
+    businessInfo?: {
+      registrationNumber?: string;
+      panNumber?: string;
+    };
+    governmentInfo?: {
+      officeAddress?: string;
+      representative?: string;
+    };
+    verificationDocs?: Array<{
+      url?: string;
+      originalname?: string;
+      uploadedAt?: string;
+    }>;
   }>;
 };
 
@@ -36,13 +62,17 @@ export type AdminApiFieldError = {
   message: string;
 };
 
-export type AdminFieldErrors = Partial<Record<"name" | "email" | "password" | "role", string>>;
+export type AdminFieldErrors = Partial<Record<"name" | "email" | "password" | "role" | "registrationNumber" | "panNumber" | "officeAddress" | "representative", string>>;
 
 export type AdminCreateUserPayload = {
   name: string;
   email: string;
   password: string;
   role: Exclude<AdminUserRole, "admin">;
+  registrationNumber?: string;
+  panNumber?: string;
+  officeAddress?: string;
+  representative?: string;
 };
 
 export type AdminCreateUserResponse = AdminApiMessage & {
@@ -53,6 +83,19 @@ export type AdminCreateUserResponse = AdminApiMessage & {
     email?: string;
     role?: string;
     status?: string;
+    businessInfo?: {
+      registrationNumber?: string;
+      panNumber?: string;
+    };
+    governmentInfo?: {
+      officeAddress?: string;
+      representative?: string;
+    };
+    verificationDocs?: Array<{
+      url?: string;
+      originalname?: string;
+      uploadedAt?: string;
+    }>;
   };
 };
 

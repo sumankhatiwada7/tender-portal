@@ -4,6 +4,12 @@ import { Types } from "mongoose";
 
 export type status= "pending" | "accepted" | "rejected";
 
+export type uploadDocument = {
+    url: string,
+    originalname: string,
+    uploadedAt: Date,
+}
+
 export interface BidDocument extends Document{
     id: string;
     tenderId: Types.ObjectId;
@@ -11,6 +17,7 @@ export interface BidDocument extends Document{
     proposal: string;
     amount: number;
     status: status;
+    documents: uploadDocument[];
 }
 export type bidlist = {
     id: string;
@@ -21,6 +28,7 @@ export type bidlist = {
     proposal: string;
     amount: number;
     status: status;
+    documents: uploadDocument[];
 }
 export type bidlistResponse ={
     message:string,

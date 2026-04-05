@@ -1,5 +1,25 @@
 import mongoose  from "mongoose";
 
+const documentSchema = new mongoose.Schema(
+    {
+        url: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        originalname: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        uploadedAt: {
+            type: Date,
+            default: Date.now,
+        },
+    },
+    { _id: false }
+);
+
 const tenderSchema= new mongoose.Schema({
 
     title:{
@@ -29,7 +49,7 @@ const tenderSchema= new mongoose.Schema({
         trim:true
     },
     documents:{
-        type:[String],
+        type:[documentSchema],
         default:[]
     },
     createdBy:{

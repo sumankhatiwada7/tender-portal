@@ -5,7 +5,6 @@ import { getApiErrorMessage } from "../dashboard/dashboard.utils";
 import { clearSession, loadSession } from "../auth/auth.utils";
 
 const PUBLIC_TENDER_PATH = `${API_BASE_URL}/api/v1/tender/public`;
-const BID_BASE_PATH = `${API_BASE_URL}/api/v1/bid`;
 
 type TenderResponse = {
   message: string;
@@ -35,7 +34,7 @@ export async function fetchPublicTenderById(id: string) {
   }
 }
 
-export async function submitBusinessBid(tenderId: string, payload: { proposal: string; amount: number }) {
+export async function submitBusinessBid(tenderId: string, payload: { proposal: string; amount: number; documents: File[] }) {
   const session = loadSession();
 
   if (!session?.token) {
@@ -43,7 +42,15 @@ export async function submitBusinessBid(tenderId: string, payload: { proposal: s
   }
 
   try {
-    await axios.post(`${BID_BASE_PATH}/create/${tenderId}`, payload, {
+    const formData = new FormData();
+    formData.append("proposal", payload.proposal);
+    formData.append("amount", String(payload.amount));
+
+    for (const file of payload.documents) {
+      formData.append("documents", file);
+    }
+
+    await axios.post(`${API_BASE_URL}/api/v1/tender/${tenderId}/bid`, formData, {
       headers: {
         Authorization: `Bearer ${session.token}`,
       },

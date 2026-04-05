@@ -3,6 +3,12 @@ import type { SessionState } from "../auth/auth.types";
 export type TenderStatus = "open" | "closed" | "awarded";
 export type BidStatus = "pending" | "accepted" | "rejected";
 
+export type UploadedDocument = {
+  url: string;
+  originalname: string;
+  uploadedAt: string;
+};
+
 export type TenderItem = {
   id: string;
   title: string;
@@ -11,7 +17,7 @@ export type TenderItem = {
   budget: number;
   category: string;
   location: string;
-  documents: string[];
+  documents: UploadedDocument[];
   createdBy: string;
   status: TenderStatus;
   awardedto?: string;
@@ -26,6 +32,7 @@ export type BidItem = {
   proposal: string;
   amount: number;
   status: BidStatus;
+  documents: UploadedDocument[];
 };
 
 export type TenderListResponse = {
@@ -70,7 +77,7 @@ export type TenderMutationInput = {
   deadline: string;
   category: string;
   location: string;
-  documents: string[];
+  documents: File[];
   status?: "open" | "closed";
 };
 
