@@ -1,505 +1,290 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { clearSession, getHomeRouteForRole, loadSession } from "../features/auth/auth.utils";
-import type { TenderItem } from "../features/dashboard/dashboard.types";
-import { formatCurrency, formatDate } from "../features/dashboard/dashboard.utils";
-import { fetchPublicTenders, sortOpenFirst } from "../features/tenders/publicTenders.api";
-
-type IconName =
-  | "mark"
-  | "building"
-  | "bid"
-  | "shield"
-  | "bell"
-  | "deadline"
-  | "document"
-  | "compass"
-  | "award"
-  | "arrow"
-  | "search";
-
-type FeatureItem = {
-  title: string;
-  description: string;
-  icon: IconName;
-  accent: string;
-};
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { getHomeRouteForRole, loadSession } from "../features/auth/auth.utils";
 
 type StepItem = {
-  label: string;
+  id: string;
   title: string;
-  description: string;
-  icon: IconName;
+  detail: string;
 };
 
-const features: FeatureItem[] = [
+type StatItem = {
+  label: string;
+  value: number;
+  suffix: string;
+};
+
+const howItWorks: StepItem[] = [
   {
-    title: "Easy Tender Posting",
-    description: "Publish tender notices with structured fields, budgets, document bundles, and approval-ready workflows.",
-    icon: "building",
-    accent: "from-blue-600 to-sky-500",
+    id: "01",
+    title: "Government office registration and verification",
+    detail: "Public institutions onboard with verified officer credentials before publishing procurement notices.",
   },
   {
-    title: "Smart Bid Management",
-    description: "Compare submissions clearly, review qualifications faster, and keep evaluations organized in one workspace.",
-    icon: "bid",
-    accent: "from-slate-700 to-slate-500",
+    id: "02",
+    title: "Tender publication with complete documents",
+    detail: "Departments publish scope, legal requirements, timelines, and tender documents in a structured format.",
   },
   {
-    title: "Secure & Transparent Process",
-    description: "Protect procurement integrity with auditable actions, verified records, and stronger oversight across the process.",
-    icon: "shield",
-    accent: "from-emerald-600 to-teal-500",
+    id: "03",
+    title: "Business bid submission with proposals",
+    detail: "Registered businesses submit technical and financial proposals through a traceable digital workflow.",
   },
   {
-    title: "Real-time Notifications",
-    description: "Keep officers and suppliers aligned with updates on new tenders, decisions, reminders, and status changes.",
-    icon: "bell",
-    accent: "from-cyan-600 to-blue-500",
-  },
-  {
-    title: "Deadline Tracking",
-    description: "Reduce missed opportunities through clear countdowns, reminders, and live deadline visibility for every tender.",
-    icon: "deadline",
-    accent: "from-amber-500 to-orange-500",
-  },
-  {
-    title: "Document Upload & Verification",
-    description: "Manage certificates, attachments, and compliance documents with confident validation before award.",
-    icon: "document",
-    accent: "from-emerald-500 to-lime-500",
+    id: "04",
+    title: "Admin oversight and award governance",
+    detail: "Administrative review ensures procurement integrity before final government award decisions are recorded.",
   },
 ];
 
-const steps: StepItem[] = [
-  {
-    label: "Step 1",
-    title: "Government posts tender",
-    description: "Agencies publish requirements, budgets, and deadlines through a guided digital workflow.",
-    icon: "building",
-  },
-  {
-    label: "Step 2",
-    title: "Businesses explore opportunities",
-    description: "Suppliers browse notices, review requirements, and prepare targeted responses.",
-    icon: "compass",
-  },
-  {
-    label: "Step 3",
-    title: "Submit bids online",
-    description: "Businesses upload documents, pricing, and supporting materials before closing time.",
-    icon: "bid",
-  },
-  {
-    label: "Step 4",
-    title: "Select and award tender",
-    description: "Evaluation teams compare bids, shortlist vendors, and issue transparent award decisions.",
-    icon: "award",
-  },
+const stats: StatItem[] = [
+  { label: "In tenders processed", value: 2.4, suffix: "B+" },
+  { label: "Registered businesses", value: 1240, suffix: "+" },
+  { label: "Published tenders", value: 340, suffix: "" },
+  { label: "Platform uptime", value: 98, suffix: "%" },
 ];
 
 function LandingPage() {
-  const navigate = useNavigate();
   const session = loadSession();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [featuredTenders, setFeaturedTenders] = useState<TenderItem[]>([]);
-
-  function handleLogout() {
-    clearSession();
-    navigate("/", { replace: true });
-  }
-
-  useEffect(() => {
-    async function loadFeaturedTenders() {
-      try {
-        const tenders = await fetchPublicTenders();
-        const openFirst = sortOpenFirst(tenders).slice(0, 3);
-        setFeaturedTenders(openFirst);
-      } catch (_error) {
-        setFeaturedTenders([]);
-      }
-    }
-
-    void loadFeaturedTenders();
-  }, []);
+  const homeRoute = useMemo(() => (session ? getHomeRouteForRole(session.user.role) : "/login"), [session]);
 
   return (
-    <main
-      className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_30%),radial-gradient(circle_at_85%_12%,rgba(16,185,129,0.12),transparent_24%),linear-gradient(180deg,#f8fbff_0%,#f8fafc_48%,#eef6ff_100%)] text-slate-900"
-      id="top"
-    >
-      <div className="pointer-events-none absolute left-[-10rem] top-24 h-72 w-72 rounded-full bg-sky-200/35 blur-3xl" />
-      <div className="pointer-events-none absolute right-[-8rem] top-56 h-72 w-72 rounded-full bg-emerald-200/30 blur-3xl" />
-
-      <header className="sticky top-0 z-50 border-b border-white/70 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <Link className="flex items-center gap-3" to="/">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-slate-900/10">
-              <AppIcon className="h-6 w-6" name="mark" />
-            </div>
-            <div>
-              <p className="font-display text-sm font-semibold uppercase tracking-[0.28em] text-sky-700">TenderFlow</p>
-              <p className="text-xs text-slate-500">Digital tender management system</p>
-            </div>
+    <main className="bg-[color:var(--white)] text-[color:var(--ink)]" id="top">
+      {/* Navbar */}
+      <header className="sticky top-0 z-50 border-b border-[color:var(--gold)] bg-[color:var(--navy)] text-[color:var(--offwhite)]">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
+          <Link className="min-w-0" to="/">
+            <p className="font-display text-lg font-semibold leading-tight tracking-[0.02em]">Nepal Tender Authority</p>
+            <p className="text-[0.74rem] uppercase tracking-[0.16em] text-[color:var(--offwhite-muted)]">Government Procurement Platform</p>
           </Link>
 
-          <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
-            <a className="transition-colors hover:text-slate-950" href="#features">Features</a>
-            <a className="transition-colors hover:text-slate-950" href="#how-it-works">How it works</a>
-            <a className="transition-colors hover:text-slate-950" href="#featured">Featured tenders</a>
-            <a className="transition-colors hover:text-slate-950" href="#trust">Trust</a>
+          <nav className="hidden items-center gap-8 text-sm font-medium md:flex">
+            <a className="nav-link" href="#process">Process</a>
+            <a className="nav-link" href="#platform">Platform</a>
+            <a className="nav-link" href="#security">Security</a>
+            <a className="nav-link" href="#contact">Contact</a>
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {session ? (
-              <>
-                <Link
-                  className="hidden rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950 sm:inline-flex"
-                  to={getHomeRouteForRole(session.user.role)}
-                >
-                  Go to workspace
-                </Link>
-                <button
-                  className="inline-flex rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800"
-                  type="button"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link className="hidden rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950 sm:inline-flex" to="/login">
-                  Login
-                </Link>
-                <Link className="inline-flex rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800" to="/register">
-                  Register
-                </Link>
-              </>
-            )}
-          </div>
+          <Link className="inline-flex border border-[color:var(--gold)] px-4 py-2 text-sm font-medium transition-opacity duration-200 hover:opacity-80" to={homeRoute}>
+            {session ? "Open Dashboard" : "Login"}
+          </Link>
         </div>
       </header>
 
-      <section className="relative scroll-mt-24">
-        <div className="mx-auto grid max-w-7xl items-center gap-14 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-2 lg:px-8 lg:pb-24 lg:pt-20">
-          <div className="max-w-2xl [animation:fade-in-up_0.55s_ease-out]">
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/90 px-4 py-2 text-sm text-slate-600 shadow-sm">
-              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-              Trusted, transparent procurement for governments and businesses
+      {/* Hero Section */}
+      <section className="min-h-screen border-b border-[color:var(--gold)] bg-[color:var(--navy)] text-[color:var(--offwhite)]" id="platform">
+        <div className="mx-auto grid min-h-screen max-w-7xl items-center gap-14 px-4 pb-16 pt-20 sm:px-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:pb-24 lg:pt-24 lg:px-8">
+          <div>
+            <div className="hero-reveal [animation-delay:120ms]">
+              <span className="mb-8 block h-px w-28 bg-[color:var(--gold)]" />
+              <h1 className="font-display text-[clamp(2.5rem,5vw,4.5rem)] font-semibold leading-[1.06] text-[color:var(--offwhite)]">
+                Nepal&apos;s Official Government Procurement Platform
+              </h1>
             </div>
 
-            <h1 className="font-display mt-8 max-w-3xl text-5xl font-semibold leading-[1.02] tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
-              Simplifying Government Tendering
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-              Browse, bid, and manage tenders efficiently in one platform. Bring structure to public procurement with faster tender discovery, secure submissions, and a cleaner evaluation process.
+            <p className="hero-reveal mt-7 max-w-xl text-base leading-8 text-[color:var(--offwhite-muted)] [animation-delay:240ms]">
+              Built for accountable public procurement, this system connects government offices and verified businesses in one structured tender workflow.
             </p>
 
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <Link className="inline-flex items-center justify-center gap-2 rounded-full bg-sky-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-sky-600/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-sky-500" to="/tenders">
-                Browse Tenders
-                <AppIcon className="h-4 w-4" name="arrow" />
+            <div className="hero-reveal mt-10 [animation-delay:340ms]">
+              <Link className="inline-flex items-center gap-2 border border-[color:var(--gold)] bg-[color:var(--gold)] px-6 py-3 text-sm font-medium text-[color:var(--navy)] transition-opacity duration-200 hover:opacity-90" to={homeRoute}>
+                Access Platform
+                <ArrowRightIcon className="h-4 w-4" />
               </Link>
-              {session ? (
-                <Link
-                  className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3.5 text-base font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950"
-                  to={getHomeRouteForRole(session.user.role)}
-                >
-                  Go to your workspace
-                </Link>
-              ) : (
-                <Link className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3.5 text-base font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950" to="/register">
-                  Register as Business
-                </Link>
-              )}
-            </div>
-
-            <form
-              className="mt-8 rounded-[1.75rem] border border-white/70 bg-white/86 p-3 shadow-soft"
-              onSubmit={(event) => {
-                event.preventDefault();
-                const trimmed = searchTerm.trim();
-                navigate(trimmed.length > 0 ? `/tenders?q=${encodeURIComponent(trimmed)}` : "/tenders");
-              }}
-            >
-              <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                <div className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <AppIcon className="h-5 w-5 text-slate-400" name="search" />
-                  <input
-                    className="w-full border-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
-                    placeholder="Search open tenders, sectors, or agencies"
-                    type="text"
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                  />
-                </div>
-                <button className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800" type="submit">
-                  Search Opportunities
-                </button>
-              </div>
-            </form>
-
-            <div className="mt-8 flex flex-wrap gap-3 text-sm text-slate-600">
-              <Chip>Audit-ready workflows</Chip>
-              <Chip>Verified supplier records</Chip>
-              <Chip>Deadline reminders</Chip>
             </div>
           </div>
 
-          <div className="lg:pl-6 [animation:fade-in-up_0.7s_ease-out]">
-            <div className="relative mx-auto max-w-xl lg:ml-auto lg:max-w-2xl">
-              <div className="float-gentle absolute -left-6 top-16 hidden rounded-3xl border border-white/70 bg-white/88 px-4 py-3 shadow-soft sm:block">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-600">Verified</p>
-                <p className="mt-1 text-sm font-semibold text-slate-900">Supplier documents checked</p>
-              </div>
-              <div className="float-delayed absolute -right-5 bottom-10 hidden rounded-3xl border border-slate-200 bg-slate-950 px-4 py-3 text-white shadow-soft sm:block">
-                <p className="text-xs uppercase tracking-[0.24em] text-sky-300">Live alerts</p>
-                <p className="mt-1 text-sm font-semibold">3 deadlines this week</p>
-              </div>
-
-              <div className="relative overflow-hidden rounded-[2rem] border border-slate-200/70 bg-slate-950 p-6 text-white shadow-soft sm:p-7">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.24),transparent_22%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.18),transparent_24%)]" />
-                <div className="relative">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.28em] text-sky-200/80">Tender dashboard</p>
-                      <h2 className="font-display mt-3 text-2xl font-semibold">Procurement control center</h2>
-                    </div>
-                    <span className="rounded-full border border-emerald-400/30 bg-emerald-400/15 px-3 py-1 text-sm font-medium text-emerald-200">Live updates</span>
-                  </div>
-
-                  <div className="mt-6 grid grid-cols-3 gap-3">
-                    <DashboardCard accent="text-sky-300" label="Open tenders" value="28" />
-                    <DashboardCard accent="text-emerald-300" label="Pending bids" value="146" />
-                    <DashboardCard accent="text-amber-300" label="Awards this month" value="17" />
-                  </div>
-
-                  <div className="mt-6 rounded-[1.75rem] border border-white/10 bg-white/8 p-5">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.24em] text-slate-300">Featured tender</p>
-                        <h3 className="mt-2 text-xl font-semibold text-white">National Highway Safety Barrier Upgrade</h3>
-                        <p className="mt-2 max-w-md text-sm leading-6 text-slate-300">Structured requirements, verified documents, and transparent bid comparison for a high-value infrastructure procurement.</p>
-                      </div>
-                      <div className="rounded-2xl bg-emerald-400/15 px-3 py-2 text-right">
-                        <p className="text-xs uppercase tracking-[0.2em] text-emerald-200">Competition</p>
-                        <p className="mt-1 text-lg font-semibold text-white">12 bids</p>
-                      </div>
-                    </div>
-                    <div className="mt-5 space-y-3">
-                      <ProgressRow label="Document compliance" value="96%" width="96%" />
-                      <ProgressRow label="Evaluation complete" value="72%" width="72%" />
-                      <ProgressRow label="Deadline coverage" value="100%" width="100%" />
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div className="hero-reveal relative justify-self-start border border-[color:var(--gold)] p-7 lg:justify-self-end [animation-delay:420ms]">
+            <div className="absolute -left-5 top-6 h-14 w-px bg-[color:var(--gold)]" />
+            <div className="space-y-6">
+              <MetricBlock label="In active tenders" suffix="B+" value={4.2} />
+              <MetricBlock label="Registered businesses" suffix="+" value={1240} />
+              <MetricBlock label="Government entities" suffix="" value={77} />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="scroll-mt-24 px-4 pb-6 sm:px-6 lg:px-8" id="trust">
-        <SectionReveal className="mx-auto max-w-7xl">
-          <div className="rounded-[2rem] border border-white/70 bg-white/82 p-6 shadow-soft sm:p-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700">Trusted outcomes</p>
-                <h2 className="font-display mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Built for trust, transparency, and measurable delivery</h2>
-                <p className="mt-3 text-base leading-7 text-slate-600">TenderFlow supports fair competition, clearer communication, and stronger oversight from publication to award.</p>
-              </div>
-              <div className="rounded-3xl border border-emerald-100 bg-emerald-50 px-5 py-4 text-sm text-emerald-800 shadow-sm">500+ Tenders | 200+ Businesses | 100+ Completed Projects</div>
-            </div>
-
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {[
-                ["500+", "Tenders posted", "Active opportunities across infrastructure, health, education, and utilities."],
-                ["200+", "Businesses registered", "Qualified suppliers and contractors engaging with public sector opportunities."],
-                ["100+", "Completed projects", "Awarded tenders delivered through an accountable and efficient process."],
-              ].map(([value, label, detail], index) => (
-                <SectionReveal className="h-full" delay={index * 110} key={label}>
-                  <article className="h-full rounded-[1.75rem] border border-slate-200 bg-slate-50/80 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-sky-200 hover:bg-white">
-                    <p className="font-display text-4xl font-semibold text-slate-950">{value}</p>
-                    <h3 className="mt-3 text-lg font-semibold text-slate-900">{label}</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{detail}</p>
-                  </article>
-                </SectionReveal>
-              ))}
-            </div>
-          </div>
-        </SectionReveal>
-      </section>
-
-      <section className="scroll-mt-24 px-4 py-24 sm:px-6 lg:px-8" id="features">
+      {/* How It Works */}
+      <section className="bg-[color:var(--dark)] px-4 py-20 text-[color:var(--offwhite)] sm:px-6 lg:px-8" id="process">
         <div className="mx-auto max-w-7xl">
-          <SectionReveal className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700">Features</p>
-            <h2 className="font-display mt-4 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">Everything needed to run tendering with clarity</h2>
-            <p className="mt-4 text-lg leading-8 text-slate-600">A focused workspace for public buyers and private suppliers to collaborate with more structure and less friction.</p>
-          </SectionReveal>
+          <RevealSection>
+            <h2 className="font-display text-[clamp(1.8rem,3vw,2.8rem)] font-semibold">How The Procurement Cycle Works</h2>
+            <p className="mt-4 max-w-3xl text-base leading-8 text-[color:var(--offwhite-muted)]">
+              The platform enforces a transparent sequence that is auditable from registration through award.
+            </p>
+          </RevealSection>
 
-          <div className="mt-14 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {features.map((feature, index) => (
-              <SectionReveal className="h-full" delay={index * 80} key={feature.title}>
-                <article className="group h-full rounded-[1.9rem] border border-white/80 bg-white/88 p-6 shadow-soft transition-all duration-300 hover:-translate-y-2 hover:border-sky-200/80">
-                  <div className={`inline-flex rounded-2xl bg-gradient-to-br ${feature.accent} p-3 text-white shadow-lg shadow-slate-900/10`}>
-                    <AppIcon className="h-6 w-6" name={feature.icon} />
-                  </div>
-                  <h3 className="mt-5 text-xl font-semibold text-slate-950">{feature.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{feature.description}</p>
-                  <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-sky-700 transition-transform duration-300 group-hover:translate-x-1">
-                    Learn more
-                    <AppIcon className="h-4 w-4" name="arrow" />
-                  </div>
-                </article>
-              </SectionReveal>
+          <div className="mt-14 grid gap-x-12 gap-y-10 md:grid-cols-2">
+            {howItWorks.map((step, index) => (
+              <RevealSection className="border-l border-[color:var(--gold)] pl-6" delay={index * 90} key={step.id}>
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-[color:var(--gold)]">{step.id}</p>
+                <h3 className="mt-3 text-xl font-medium text-[color:var(--offwhite)]">{step.title}</h3>
+                <p className="mt-3 text-base leading-8 text-[color:var(--offwhite-muted)]">{step.detail}</p>
+              </RevealSection>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="scroll-mt-24 px-4 pb-24 sm:px-6 lg:px-8" id="how-it-works">
-        <div className="mx-auto max-w-7xl">
-          <SectionReveal className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700">How it works</p>
-            <h2 className="font-display mt-4 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">A transparent tender journey from notice to award</h2>
-            <p className="mt-4 text-lg leading-8 text-slate-600">Keep governments and businesses aligned through a step-by-step process designed for visibility and faster decisions.</p>
-          </SectionReveal>
-
-          <div className="relative mt-14">
-            <div className="absolute left-10 right-10 top-10 hidden h-px bg-gradient-to-r from-sky-200 via-slate-200 to-emerald-200 lg:block" />
-            <div className="grid gap-6 lg:grid-cols-4">
-              {steps.map((step, index) => (
-                <SectionReveal className="h-full" delay={index * 110} key={step.title}>
-                  <article className="relative h-full rounded-[1.9rem] border border-slate-200 bg-white/88 p-6 shadow-soft">
-                    <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-slate-900/10">
-                      <AppIcon className="h-6 w-6" name={step.icon} />
-                    </div>
-                    <p className="mt-5 text-xs font-semibold uppercase tracking-[0.26em] text-sky-700">{step.label}</p>
-                    <h3 className="mt-3 text-xl font-semibold text-slate-950">{step.title}</h3>
-                    <p className="mt-3 text-sm leading-7 text-slate-600">{step.description}</p>
-                  </article>
-                </SectionReveal>
-              ))}
-            </div>
-          </div>
+      {/* Stats Bar */}
+      <section className="border-y border-[color:var(--gold)] bg-[color:var(--navy)] px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-4 md:gap-0">
+          {stats.map((item, index) => (
+            <RevealSection className="px-2 md:px-8 md:[&:not(:last-child)]:border-r md:[&:not(:last-child)]:border-[color:var(--gold)]" delay={index * 80} key={item.label}>
+              <p className="font-display text-4xl font-semibold text-[color:var(--gold)]">
+                <CountUp end={item.value} suffix={item.suffix} />
+              </p>
+              <p className="mt-2 text-xs font-medium uppercase tracking-[0.15em] text-[color:var(--offwhite-muted)]">{item.label}</p>
+            </RevealSection>
+          ))}
         </div>
       </section>
 
-      <section className="scroll-mt-24 bg-slate-950 px-4 py-24 text-white sm:px-6 lg:px-8" id="featured">
-        <div className="mx-auto max-w-7xl">
-          <SectionReveal className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-300">Featured tenders</p>
-              <h2 className="font-display mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">Explore current opportunities across public sector projects</h2>
-              <p className="mt-4 text-lg leading-8 text-slate-300">Preview the kind of tenders businesses can discover, evaluate, and bid on through the platform.</p>
-            </div>
-            <Link className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/8 px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/14" to="/tenders">
-              View all tenders
-            </Link>
-          </SectionReveal>
+      {/* Why This Platform */}
+      <section className="bg-[color:var(--white)] px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1.2fr_1fr]">
+          <RevealSection className="border-l border-[color:var(--gold)] pl-7">
+            <p className="text-xs font-medium uppercase tracking-[0.15em] text-[color:var(--gold)]">Why this platform</p>
+            <h2 className="font-display mt-4 text-[clamp(1.8rem,3vw,2.8rem)] font-semibold text-[color:var(--navy)]">
+              Procurement built for institutional trust, not startup theater.
+            </h2>
+            <p className="mt-6 max-w-2xl text-base leading-8 text-[color:var(--ink)]">
+              Nepal&apos;s tender process requires formal controls and clear accountability. This system is designed around verification, publication integrity, and decision transparency so every action can be reviewed with confidence.
+            </p>
+          </RevealSection>
 
-          <div className="mt-12 grid gap-6 xl:grid-cols-3">
-            {featuredTenders.map((tender, index) => (
-              <SectionReveal className="h-full" delay={index * 100} key={tender.title}>
-                <article className="h-full rounded-[1.9rem] border border-white/10 bg-white/6 p-6 shadow-[0_24px_60px_rgba(2,8,23,0.28)] transition-all duration-300 hover:-translate-y-2 hover:border-sky-400/30 hover:bg-white/9">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="rounded-full border border-sky-300/20 bg-sky-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-200">{tender.category}</span>
-                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-300">{tender.status}</span>
-                  </div>
-                  <h3 className="mt-5 text-2xl font-semibold text-white">{tender.title}</h3>
-                  <p className="mt-2 text-sm text-slate-300">Published opportunity</p>
-                  <div className="mt-6 grid gap-4 rounded-[1.5rem] border border-white/10 bg-black/15 p-4 sm:grid-cols-2">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Budget</p>
-                      <p className="mt-2 text-lg font-semibold text-white">{formatCurrency(tender.budget)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Deadline</p>
-                      <p className="mt-2 text-lg font-semibold text-white">{formatDate(tender.deadline)}</p>
-                    </div>
-                  </div>
-                  <div className="mt-6 flex items-center justify-between">
-                    <p className="text-sm text-slate-300">{tender.location}</p>
-                    <Link className="inline-flex items-center gap-2 text-sm font-semibold text-sky-300" to={`/tenders/${tender.id}`}>
-                      Details
-                      <AppIcon className="h-4 w-4" name="arrow" />
-                    </Link>
-                  </div>
-                </article>
-              </SectionReveal>
+          <div className="space-y-8">
+            {[
+              "Structured tender records reduce ambiguity in bid evaluation.",
+              "Role-based access separates government, business, and admin duties.",
+              "Document lifecycle visibility keeps submissions complete and auditable.",
+            ].map((point, index) => (
+              <RevealSection className="border-b border-[color:var(--line)] pb-6" delay={index * 90} key={point}>
+                <p className="text-base leading-8 text-[color:var(--ink)]">{point}</p>
+              </RevealSection>
             ))}
           </div>
-
-          {featuredTenders.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-slate-300">
-              No tenders are available yet. Create a tender from the government dashboard and it will appear here.
-            </div>
-          ) : null}
         </div>
       </section>
 
-      <section className="px-4 py-24 sm:px-6 lg:px-8">
+      {/* For Government / For Business */}
+      <section className="border-y border-[color:var(--line)]" id="contact">
+        <div className="grid md:grid-cols-2">
+          <RevealSection className="bg-[color:var(--navy)] px-6 py-16 text-[color:var(--offwhite)] sm:px-10 lg:px-14" delay={60}>
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--gold)]">For Government Offices</p>
+            <h3 className="font-display mt-4 text-3xl font-semibold">Control every tender stage with full oversight</h3>
+            <ul className="mt-8 space-y-4 text-base leading-8 text-[color:var(--offwhite-muted)]">
+              <li>Publish compliant tender notices with clear deadlines and scope.</li>
+              <li>Track bid submissions with audit-ready status history.</li>
+              <li>Review documents in one secure repository before award.</li>
+              <li>Maintain procurement transparency for internal and external review.</li>
+            </ul>
+          </RevealSection>
+
+          <RevealSection className="border-l border-[color:var(--line)] bg-[color:var(--white)] px-6 py-16 text-[color:var(--ink)] sm:px-10 lg:px-14" delay={120}>
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--gold)]">For Businesses</p>
+            <h3 className="font-display mt-4 text-3xl font-semibold text-[color:var(--navy)]">Compete in public opportunities with clarity</h3>
+            <ul className="mt-8 space-y-4 text-base leading-8">
+              <li>Find relevant tenders quickly through structured listings.</li>
+              <li>Submit proposals with document checkpoints and deadlines.</li>
+              <li>Receive clear status updates throughout the evaluation cycle.</li>
+              <li>Build a verified profile recognized by the platform administrators.</li>
+            </ul>
+          </RevealSection>
+        </div>
+      </section>
+
+      {/* Trust & Security */}
+      <section className="bg-[color:var(--dark)] px-4 py-20 text-[color:var(--offwhite)] sm:px-6 lg:px-8" id="security">
         <div className="mx-auto max-w-7xl">
-          <SectionReveal>
-            <div className="overflow-hidden rounded-[2rem] border border-sky-100 bg-gradient-to-br from-sky-600 via-sky-700 to-slate-950 p-8 text-white shadow-soft sm:p-12">
-              <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-center">
-                <div className="max-w-2xl">
-                  <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-100/80">Call to action</p>
-                  <h2 className="font-display mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Start Bidding Today</h2>
-                  <p className="mt-4 text-lg leading-8 text-sky-50/88">Join a platform designed to help governments publish with confidence and businesses compete with clarity.</p>
-                </div>
-                <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-                  <Link
-                    className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3.5 text-base font-semibold text-slate-950 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100"
-                    to={session ? getHomeRouteForRole(session.user.role) : "/register"}
-                  >
-                    {session ? "Go to workspace" : "Get Started"}
-                  </Link>
-                  <Link className="inline-flex items-center justify-center rounded-full border border-white/20 px-6 py-3.5 text-base font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10" to="/login">
-                    Login
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </SectionReveal>
+          <RevealSection>
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--gold)]">Trust and security</p>
+            <h2 className="font-display mt-4 text-[clamp(1.8rem,3vw,2.8rem)] font-semibold">Verified access and governed document handling</h2>
+          </RevealSection>
+
+          <div className="mt-10 grid gap-6 md:grid-cols-2">
+            <RevealSection className="border border-[color:var(--gold)] p-6" delay={80}>
+              <h3 className="text-lg font-medium text-[color:var(--offwhite)]">Business verification before participation</h3>
+              <p className="mt-3 text-base leading-8 text-[color:var(--offwhite-muted)]">
+                Every business is verified by our admin team before accessing active tenders and submitting bids.
+              </p>
+            </RevealSection>
+
+            <RevealSection className="border border-[color:var(--gold)] p-6" delay={160}>
+              <h3 className="text-lg font-medium text-[color:var(--offwhite)]">Secure document storage and review trace</h3>
+              <p className="mt-3 text-base leading-8 text-[color:var(--offwhite-muted)]">
+                All tender documents are stored securely on cloud infrastructure with role-based review visibility.
+              </p>
+            </RevealSection>
+          </div>
         </div>
       </section>
 
-      <footer className="border-t border-white/70 bg-white/70 px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+      {/* CTA Section */}
+      <section className="border-t border-[color:var(--gold)] bg-[color:var(--navy)] px-4 py-16 text-[color:var(--offwhite)] sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl text-left">
+          <RevealSection>
+            <h2 className="font-display text-[clamp(1.8rem,3vw,2.8rem)] font-semibold">Enter Nepal&apos;s official tender ecosystem</h2>
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+              <Link className="inline-flex items-center justify-center border border-[color:var(--gold)] px-6 py-3 text-sm font-medium transition-opacity duration-200 hover:opacity-80" to="/register">
+                Register as Business
+              </Link>
+              <Link className="inline-flex items-center justify-center border border-[color:var(--gold)] px-6 py-3 text-sm font-medium transition-opacity duration-200 hover:opacity-80" to="/register">
+                Register as Government Office
+              </Link>
+            </div>
+          </RevealSection>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-[color:var(--gold)] bg-[color:var(--navy)] px-4 py-14 text-[color:var(--offwhite)] sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-[1.3fr_1fr_1fr_1fr]">
           <div>
-            <p className="font-display text-lg font-semibold text-slate-950">TenderFlow</p>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">A professional tender management system focused on trusted procurement, efficient bidding, and transparent public sector delivery.</p>
+            <p className="font-display text-xl font-semibold">Nepal Tender Authority</p>
+            <p className="mt-4 max-w-xs text-sm leading-7 text-[color:var(--offwhite-muted)]">
+              Official digital procurement environment for publication, bidding, and oversight.
+            </p>
           </div>
 
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between lg:gap-10">
-            <nav className="flex flex-wrap items-center gap-5 text-sm font-medium text-slate-600">
-              <a className="transition-colors hover:text-slate-950" href="#top">About</a>
-              <a className="transition-colors hover:text-slate-950" href="#featured">Contact</a>
-              <a className="transition-colors hover:text-slate-950" href="#trust">Terms</a>
-            </nav>
-            <div className="flex items-center gap-3">
-              {[
-                { label: "LinkedIn", text: "in" },
-                { label: "X", text: "x" },
-                { label: "Facebook", text: "f" },
-              ].map((item) => (
-                <button aria-label={item.label} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-semibold uppercase text-slate-600 transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:text-sky-700" key={item.label} type="button">
-                  {item.text}
-                </button>
-              ))}
-            </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.15em] text-[color:var(--gold)]">Platform</p>
+            <ul className="mt-4 space-y-2 text-sm text-[color:var(--offwhite-muted)]">
+              <li><a className="nav-link" href="#platform">Overview</a></li>
+              <li><a className="nav-link" href="#process">Process</a></li>
+              <li><Link className="nav-link" to="/tenders">Open Tenders</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.15em] text-[color:var(--gold)]">Support</p>
+            <ul className="mt-4 space-y-2 text-sm text-[color:var(--offwhite-muted)]">
+              <li><a className="nav-link" href="#security">Verification Policy</a></li>
+              <li><a className="nav-link" href="#contact">Help Desk</a></li>
+              <li><Link className="nav-link" to="/login">Account Access</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.15em] text-[color:var(--gold)]">Legal</p>
+            <ul className="mt-4 space-y-2 text-sm text-[color:var(--offwhite-muted)]">
+              <li>Procurement Act Compliance</li>
+              <li>Terms of Use</li>
+              <li>Privacy and Data Handling</li>
+            </ul>
           </div>
         </div>
-        <div className="mx-auto mt-8 max-w-7xl border-t border-slate-200 pt-6 text-sm text-slate-500">Copyright (c) 2026 TenderFlow. All rights reserved.</div>
+
+        <div className="mx-auto mt-10 max-w-7xl border-t border-[color:var(--gold)]/40 pt-6 text-xs tracking-[0.05em] text-[color:var(--offwhite-muted)]">
+          Copyright 2026. Government of Nepal Procurement Platform.
+        </div>
       </footer>
     </main>
   );
 }
 
-function SectionReveal({
+function RevealSection({
   children,
   className,
   delay = 0,
@@ -512,8 +297,8 @@ function SectionReveal({
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const current = ref.current;
-    if (!current) return;
+    const node = ref.current;
+    if (!node) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -521,10 +306,10 @@ function SectionReveal({
         setIsVisible(true);
         observer.unobserve(entry.target);
       },
-      { threshold: 0.16, rootMargin: "0px 0px -40px 0px" },
+      { threshold: 0.2, rootMargin: "0px 0px -40px 0px" },
     );
 
-    observer.observe(current);
+    observer.observe(node);
     return () => observer.disconnect();
   }, []);
 
@@ -539,119 +324,80 @@ function SectionReveal({
   );
 }
 
-function Chip({ children }: { children: ReactNode }) {
-  return <span className="rounded-full border border-white/70 bg-white/84 px-4 py-2 shadow-sm">{children}</span>;
+function CountUp({ end, suffix }: { end: number; suffix: string }) {
+  const ref = useRef<HTMLSpanElement | null>(null);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [value, setValue] = useState(0);
+  const decimals = end < 10 && !Number.isInteger(end) ? 1 : 0;
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || hasStarted) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setHasStarted(true);
+        observer.unobserve(entry.target);
+      },
+      { threshold: 0.6 },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasStarted]);
+
+  useEffect(() => {
+    if (!hasStarted) return;
+
+    const duration = 1100;
+    const start = performance.now();
+    let frame = 0;
+
+    function animate(now: number) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(end * eased);
+      if (progress < 1) frame = requestAnimationFrame(animate);
+    }
+
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [end, hasStarted]);
+
+  return (
+    <span ref={ref}>
+      {value.toLocaleString("en-US", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      })}
+      {suffix}
+    </span>
+  );
 }
 
-function DashboardCard({ value, label, accent }: { value: string; label: string; accent: string }) {
+function MetricBlock({ label, value, suffix }: { label: string; value: number; suffix: string }) {
   return (
-    <div className="rounded-[1.35rem] border border-white/10 bg-white/8 p-4">
-      <p className={["font-display text-3xl font-semibold", accent].join(" ")}>{value}</p>
-      <p className="mt-2 text-xs uppercase tracking-[0.22em] text-slate-300">{label}</p>
+    <div className="border-b border-[color:var(--gold)]/45 pb-5 last:border-b-0 last:pb-0">
+      <p className="font-display text-5xl font-semibold text-[color:var(--gold)] sm:text-6xl">
+        {value.toLocaleString("en-US", {
+          minimumFractionDigits: value < 10 && !Number.isInteger(value) ? 1 : 0,
+          maximumFractionDigits: value < 10 && !Number.isInteger(value) ? 1 : 0,
+        })}
+        {suffix}
+      </p>
+      <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--offwhite-muted)]">{label}</p>
     </div>
   );
 }
 
-function ProgressRow({ label, value, width }: { label: string; value: string; width: string }) {
+function ArrowRightIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
-    <div>
-      <div className="flex items-center justify-between text-sm text-slate-200">
-        <span>{label}</span>
-        <span>{value}</span>
-      </div>
-      <div className="mt-2 h-2 rounded-full bg-white/10">
-        <div className="h-2 rounded-full bg-gradient-to-r from-sky-400 to-emerald-400" style={{ width }} />
-      </div>
-    </div>
+    <svg className={className} fill="none" viewBox="0 0 24 24">
+      <path d="M5 12h14m-5-5 5 5-5 5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+    </svg>
   );
-}
-
-function AppIcon({ name, className = "h-5 w-5" }: { name: IconName; className?: string }) {
-  const common = {
-    className,
-    fill: "none",
-    viewBox: "0 0 24 24",
-  } as const;
-
-  switch (name) {
-    case "mark":
-      return (
-        <svg {...common}>
-          <path d="M8 4.75h5.75L18 9v10.25A1.75 1.75 0 0 1 16.25 21h-8.5A1.75 1.75 0 0 1 6 19.25v-12.5A1.75 1.75 0 0 1 7.75 5H8" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
-          <path d="M13.5 4.75V9H18M9 13h6m-6 3h4M9.25 3h3.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
-        </svg>
-      );
-    case "building":
-      return (
-        <svg {...common}>
-          <path d="M4.75 19.25h14.5M7 19.25V6.75L12 4l5 2.75v12.5M9.75 10h.5m3.5 0h.5m-4 3h.5m3.5 0h.5m-7.5 6.25v-3.5h9v3.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
-        </svg>
-      );
-    case "bid":
-      return (
-        <svg {...common}>
-          <path d="M6.75 8.25h10.5M6.75 12h10.5M6.75 15.75h6.5M5.75 4.75h12.5a1 1 0 0 1 1 1v12.5a1 1 0 0 1-1 1H5.75a1 1 0 0 1-1-1V5.75a1 1 0 0 1 1-1Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
-          <path d="m15.75 16.25 1.5 1.5 2.5-3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
-        </svg>
-      );
-    case "shield":
-      return (
-        <svg {...common}>
-          <path d="M12 3.75 6.75 5.5v5.25c0 4.06 2.4 7.78 6.13 9.48a.3.3 0 0 0 .24 0c3.73-1.7 6.13-5.42 6.13-9.48V5.5L12 3.75Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.7" />
-          <path d="m9.5 12.25 1.65 1.65 3.35-3.6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
-        </svg>
-      );
-    case "bell":
-      return (
-        <svg {...common}>
-          <path d="M12 5a4.25 4.25 0 0 0-4.25 4.25v2.28c0 .52-.16 1.03-.46 1.45l-1.04 1.47a.75.75 0 0 0 .61 1.18h10.28a.75.75 0 0 0 .61-1.18l-1.04-1.47a2.5 2.5 0 0 1-.46-1.45V9.25A4.25 4.25 0 0 0 12 5Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.7" />
-          <path d="M10.25 18a1.75 1.75 0 0 0 3.5 0" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
-        </svg>
-      );
-    case "deadline":
-      return (
-        <svg {...common}>
-          <path d="M8 3.75v2.5M16 3.75v2.5M5.75 7h12.5a1 1 0 0 1 1 1v10.25a1 1 0 0 1-1 1H5.75a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.7" />
-          <path d="M4.75 10.25h14.5M12 13v3.25l2.25 1.25" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
-        </svg>
-      );
-    case "document":
-      return (
-        <svg {...common}>
-          <path d="M8 4.75h5.75L18 9v10.25A1.75 1.75 0 0 1 16.25 21h-8.5A1.75 1.75 0 0 1 6 19.25v-12.5A1.75 1.75 0 0 1 7.75 5H8" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
-          <path d="M13.5 4.75V9H18M9.25 14.25l1.35 1.35 3.15-3.35" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
-        </svg>
-      );
-    case "compass":
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.7" />
-          <path d="m14.85 9.15-1.55 4.15-4.15 1.55 1.55-4.15 4.15-1.55Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.7" />
-        </svg>
-      );
-    case "award":
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="9" r="4.75" stroke="currentColor" strokeWidth="1.7" />
-          <path d="m9.5 13.1-1.25 6.15L12 17.25l3.75 2-1.25-6.15" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
-        </svg>
-      );
-    case "search":
-      return (
-        <svg {...common}>
-          <circle cx="11" cy="11" r="6.25" stroke="currentColor" strokeWidth="1.7" />
-          <path d="m16 16 3.25 3.25" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
-        </svg>
-      );
-    case "arrow":
-      return (
-        <svg {...common}>
-          <path d="M5 12h14m-5-5 5 5-5 5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
-        </svg>
-      );
-  }
-
-  return null;
 }
 
 export default LandingPage;

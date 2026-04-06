@@ -114,7 +114,7 @@ function RegisterPage() {
     <AuthShell
       view="register"
       title="Create your account"
-      description="Create an account, choose your role, and keep backend validation visible at field level."
+      description="Register your organization and complete verification to participate in Tender Nepal."
       topFeedback={
         <>
           {formError ? <FeedbackMessage tone="error">{formError}</FeedbackMessage> : null}
@@ -163,14 +163,14 @@ function RegisterPage() {
         />
 
         <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-700">Account role</span>
+          <span className="mb-2 block text-sm font-medium text-text">Account role</span>
           <select
             aria-invalid={errors.role?.message ? "true" : "false"}
             className={[
-              "w-full rounded-lg border bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition-all duration-200",
+              "w-full rounded-lg border bg-white px-4 py-3 text-sm text-text shadow-sm outline-none transition-all duration-200",
               errors.role?.message
                 ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500"
-                : "border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500",
+                : "border-border focus:border-green-main focus:ring-2 focus:ring-green-main",
             ].join(" ")}
             {...registerField("role")}
           >
@@ -236,9 +236,9 @@ function RegisterPage() {
         ) : null}
 
         <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-700">Verification documents</span>
+          <span className="mb-2 block text-sm font-medium text-text">Verification documents</span>
           <input
-            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-text shadow-sm outline-none transition-all duration-200 focus:border-green-main focus:ring-2 focus:ring-green-main"
             type="file"
             multiple
             accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
@@ -248,7 +248,7 @@ function RegisterPage() {
               clearFeedback("verificationDocs");
             }}
           />
-          <p className="mt-2 text-xs text-slate-500">Upload up to 5 files, maximum 10MB each.</p>
+          <p className="mt-2 text-xs text-muted">Upload up to 5 files, maximum 10MB each.</p>
           <div
             className={`grid transition-all duration-200 ${
               errors.verificationDocs?.message ? "mt-2 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
@@ -259,7 +259,7 @@ function RegisterPage() {
         </label>
 
         <button
-          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3.5 font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700 active:translate-y-px disabled:cursor-wait disabled:bg-blue-400"
+          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-green-main bg-green-main px-4 py-3.5 font-semibold text-white transition-colors duration-200 hover:bg-green-dark active:translate-y-px disabled:cursor-wait disabled:bg-green-main/40"
           type="submit"
           disabled={isSubmitting}
         >
@@ -287,9 +287,9 @@ function RegisterPage() {
           )}
         </button>
 
-        <p className="text-center text-sm text-slate-600">
+        <p className="text-center text-sm text-muted">
           Already have an account?{" "}
-          <Link className="font-semibold text-blue-600 transition-colors hover:text-blue-700" to="/login">
+          <Link className="font-semibold text-green-main transition-colors hover:text-green-dark" to="/login">
             Sign in
           </Link>
         </p>

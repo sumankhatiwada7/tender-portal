@@ -2,11 +2,25 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { fetchPublicTenders, sortOpenFirst } from "../features/tenders/publicTenders.api";
 import type { TenderItem, TenderStatus } from "../features/dashboard/dashboard.types";
-import { formatCurrency, formatDate, getTenderStatusTone, matchesSearch } from "../features/dashboard/dashboard.utils";
+import { formatCurrency, formatDate, matchesSearch } from "../features/dashboard/dashboard.utils";
+import Navbar from "../components/landing/Navbar";
+import Footer from "../components/landing/Footer";
 
 type StatusFilter = "all" | TenderStatus;
 
 const pageSize = 9;
+
+function getStatusTone(status: TenderStatus) {
+  if (status === "open") {
+    return "bg-green-light text-green-main border-green-main/30";
+  }
+
+  if (status === "awarded") {
+    return "bg-amber-50 text-amber-700 border-amber-300";
+  }
+
+  return "bg-slate-100 text-slate-700 border-slate-300";
+}
 
 function AllTendersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -90,19 +104,21 @@ function AllTendersPage() {
   const paginatedTenders = filteredTenders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f6fbff_0%,#eef4ff_100%)] px-4 py-10 text-slate-900 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <header className="rounded-4xl border border-slate-200/80 bg-white/90 p-6 shadow-sm sm:p-8">
+    <>
+      <Navbar />
+      <main className="min-h-screen bg-bg px-4 py-10 text-text sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl space-y-8">
+          <header className="rounded-lg border-[1.5px] border-border bg-white p-6 sm:p-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-700">Tender marketplace</p>
-              <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">All tender opportunities</h1>
-              <p className="mt-3 text-base leading-7 text-slate-600">
+              <p className="text-xs font-semibold uppercase tracking-widest text-green-main">TENDER MARKETPLACE</p>
+              <h1 className="font-syne mt-2 text-4xl font-extrabold tracking-tight text-text sm:text-5xl">All Tender Opportunities</h1>
+              <p className="mt-3 text-base leading-7 text-muted">
                 Explore all published tenders and narrow results by keyword, status, category, and location.
               </p>
             </div>
             <Link
-              className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950"
+              className="inline-flex items-center justify-center rounded-lg border border-green-main px-5 py-3 text-sm font-semibold text-green-main transition-colors duration-150 hover:bg-green-light"
               to="/"
             >
               Back to landing
@@ -111,9 +127,9 @@ function AllTendersPage() {
 
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <label className="block">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Search</span>
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-widest text-muted">Search</span>
               <input
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none focus:border-sky-300"
+                className="w-full rounded-lg border-[1.5px] border-border bg-white px-4 py-3 text-sm text-text outline-none focus:border-green-main focus:ring-2 focus:ring-green-main"
                 type="text"
                 placeholder="Search title, description, category"
                 value={search}
@@ -122,9 +138,9 @@ function AllTendersPage() {
             </label>
 
             <label className="block">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Status</span>
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-widest text-muted">Status</span>
               <select
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none focus:border-sky-300"
+                className="w-full rounded-lg border-[1.5px] border-border bg-white px-4 py-3 text-sm text-text outline-none focus:border-green-main focus:ring-2 focus:ring-green-main"
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
               >
@@ -136,9 +152,9 @@ function AllTendersPage() {
             </label>
 
             <label className="block">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Category</span>
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-widest text-muted">Category</span>
               <select
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none focus:border-sky-300"
+                className="w-full rounded-lg border-[1.5px] border-border bg-white px-4 py-3 text-sm text-text outline-none focus:border-green-main focus:ring-2 focus:ring-green-main"
                 value={categoryFilter}
                 onChange={(event) => setCategoryFilter(event.target.value)}
               >
@@ -152,9 +168,9 @@ function AllTendersPage() {
             </label>
 
             <label className="block">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Location</span>
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-widest text-muted">Location</span>
               <select
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none focus:border-sky-300"
+                className="w-full rounded-lg border-[1.5px] border-border bg-white px-4 py-3 text-sm text-text outline-none focus:border-green-main focus:ring-2 focus:ring-green-main"
                 value={locationFilter}
                 onChange={(event) => setLocationFilter(event.target.value)}
               >
@@ -170,49 +186,49 @@ function AllTendersPage() {
         </header>
 
         {loading ? (
-          <section className="rounded-4xl border border-slate-200 bg-white p-8 text-center text-slate-600">Loading tenders...</section>
+          <section className="rounded-lg border-[1.5px] border-border bg-white p-8 text-center text-muted">Loading tenders...</section>
         ) : error ? (
-          <section className="rounded-4xl border border-rose-200 bg-rose-50 p-8 text-center">
+          <section className="rounded-lg border border-rose-200 bg-rose-50 p-8 text-center">
             <p className="text-lg font-semibold text-rose-700">Unable to load tenders</p>
             <p className="mt-2 text-sm text-rose-600">{error}</p>
           </section>
         ) : filteredTenders.length === 0 ? (
-          <section className="rounded-4xl border border-slate-200 bg-white p-8 text-center text-slate-600">
+          <section className="rounded-lg border-[1.5px] border-border bg-white p-8 text-center text-muted">
             No tenders match your current filters.
           </section>
         ) : (
           <>
             <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {paginatedTenders.map((tender) => (
-                <article key={tender.id} className="h-full rounded-[1.8rem] border border-slate-200 bg-white p-6 shadow-sm">
+                {paginatedTenders.map((tender) => (
+                <article key={tender.id} className="h-full rounded-lg border-[1.5px] border-border bg-white p-6 transition-colors duration-150 hover:border-green-main">
                   <div className="flex items-center justify-between gap-4">
-                    <span className={["inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ring-1", getTenderStatusTone(tender.status)].join(" ")}>
+                    <span className={["inline-flex rounded-md border px-3 py-1 text-xs font-semibold uppercase tracking-widest", getStatusTone(tender.status)].join(" ")}>
                       {tender.status}
                     </span>
-                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{tender.category}</span>
+                    <span className="text-xs font-semibold uppercase tracking-widest text-muted">{tender.category}</span>
                   </div>
 
-                  <h2 className="mt-4 text-2xl font-semibold text-slate-950">{tender.title}</h2>
-                  <p className="mt-2 text-sm leading-7 text-slate-600 line-clamp-3">{tender.description}</p>
+                  <h2 className="font-syne mt-4 text-2xl font-extrabold tracking-tight text-text">{tender.title}</h2>
+                  <p className="mt-2 text-sm leading-7 text-muted line-clamp-3">{tender.description}</p>
 
-                  <div className="mt-5 grid gap-3 rounded-2xl bg-slate-50 p-4 text-sm">
+                  <div className="mt-5 grid gap-3 rounded-lg bg-green-light/40 p-4 text-sm">
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-slate-500">Budget</span>
-                      <span className="font-semibold text-slate-900">{formatCurrency(tender.budget)}</span>
+                      <span className="text-muted">Budget</span>
+                      <span className="font-semibold text-text">{formatCurrency(tender.budget)}</span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-slate-500">Deadline</span>
-                      <span className="font-semibold text-slate-900">{formatDate(tender.deadline)}</span>
+                      <span className="text-muted">Deadline</span>
+                      <span className="font-semibold text-text">{formatDate(tender.deadline)}</span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-slate-500">Location</span>
-                      <span className="font-semibold text-slate-900">{tender.location}</span>
+                      <span className="text-muted">Location</span>
+                      <span className="font-semibold text-text">{tender.location}</span>
                     </div>
                   </div>
 
                   <div className="mt-5">
                     <Link
-                      className="inline-flex items-center justify-center rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      className="inline-flex items-center justify-center rounded-lg border border-green-main bg-green-main px-4 py-2 text-sm font-semibold text-white transition-colors duration-150 hover:bg-green-dark"
                       to={`/tenders/${tender.id}`}
                     >
                       Details
@@ -222,13 +238,13 @@ function AllTendersPage() {
               ))}
             </section>
 
-            <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:px-5">
-              <p className="text-sm text-slate-600">
+            <div className="flex items-center justify-between rounded-lg border-[1.5px] border-border bg-white px-4 py-3 sm:px-5">
+              <p className="text-sm text-muted">
                 Showing {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, filteredTenders.length)} of {filteredTenders.length} tenders
               </p>
               <div className="flex items-center gap-2">
                 <button
-                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text disabled:cursor-not-allowed disabled:opacity-50"
                   type="button"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((value) => Math.max(1, value - 1))}
@@ -236,7 +252,7 @@ function AllTendersPage() {
                   Previous
                 </button>
                 <button
-                  className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+                  className="rounded-lg border border-green-main bg-green-main px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-green-main/40"
                   type="button"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((value) => Math.min(totalPages, value + 1))}
@@ -247,8 +263,10 @@ function AllTendersPage() {
             </div>
           </>
         )}
-      </div>
-    </main>
+        </div>
+      </main>
+      <Footer />
+    </>
   );
 }
 

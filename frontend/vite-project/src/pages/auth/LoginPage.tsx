@@ -122,7 +122,7 @@ function LoginPage() {
     <AuthShell
       view="login"
       title="Welcome back"
-      description="Sign in to continue into the queue system with backend validation shown inline."
+      description="Sign in to continue into Tender Nepal with secure role-based access."
       topFeedback={
         <>
           {justRegistered ? (
@@ -169,7 +169,7 @@ function LoginPage() {
         />
 
         <button
-          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3.5 font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700 active:translate-y-px disabled:cursor-wait disabled:bg-blue-400"
+          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-green-main bg-green-main px-4 py-3.5 font-semibold text-white transition-colors duration-200 hover:bg-green-dark active:translate-y-px disabled:cursor-wait disabled:bg-green-main/40"
           type="submit"
           disabled={isSubmitting}
         >
@@ -197,9 +197,9 @@ function LoginPage() {
           )}
         </button>
 
-        <p className="text-center text-sm text-slate-600">
+        <p className="text-center text-sm text-muted">
           New here?{" "}
-          <Link className="font-semibold text-blue-600 transition-colors hover:text-blue-700" to="/register">
+          <Link className="font-semibold text-green-main transition-colors hover:text-green-dark" to="/register">
             Create an account
           </Link>
         </p>

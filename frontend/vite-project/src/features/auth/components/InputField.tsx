@@ -28,7 +28,7 @@ function InputField({
 
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-medium text-slate-700">{label}</span>
+      <span className="mb-2 block text-sm font-medium text-text">{label}</span>
 
       <div className="relative">
         <input
@@ -41,7 +41,7 @@ function InputField({
             isPasswordField ? "pr-16" : "",
             error
               ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500"
-              : "border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500",
+              : "border-border focus:border-green-main focus:ring-2 focus:ring-green-main",
           ].join(" ")}
           placeholder={placeholder}
           type={isPasswordField && isPasswordVisible ? "text" : type}
@@ -54,7 +54,7 @@ function InputField({
 
         {isPasswordField ? (
           <button
-            className="absolute inset-y-0 right-3 my-auto inline-flex h-8 items-center rounded-md px-2 text-xs font-semibold text-slate-500 transition-colors duration-200 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="absolute inset-y-0 right-3 my-auto inline-flex h-8 items-center rounded-md px-2 text-xs font-semibold text-muted transition-colors duration-200 hover:text-text focus:outline-none focus:ring-2 focus:ring-green-main"
             type="button"
             onClick={() => setIsPasswordVisible((current) => !current)}
           >
