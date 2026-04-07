@@ -52,3 +52,18 @@ export type tenderListResponse ={
     tenders?:tenderlist[]
 
 }
+
+export type publicPlatformStats = {
+    totalTenders: number,
+    openTenders: number,
+    totalTenderValue: number,
+    registeredBusinesses: number,
+    governmentOffices: number,
+    totalBids: number,
+}
+
+export type publicPlatformStatsResponse = {
+    message: string,
+    success: boolean,
+    stats: publicPlatformStats,
+}

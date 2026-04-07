@@ -9,26 +9,93 @@ import type {
   SessionState,
 } from "./auth.types";
 
+const NEW_AUTH_STORAGE_KEY = "tendernepal_auth";
+
+function normalizeSession(raw: unknown): SessionState | null {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const parsed = raw as {
+    token?: string;
+    user?: { id?: string; name?: string; email?: string; role?: string | string[] };
+  };
+
+  if (!parsed.token || !parsed.user?.id || !parsed.user.name || !parsed.user.email) {
+    return null;
+  }
+
+  const role = Array.isArray(parsed.user.role) ? parsed.user.role[0] : parsed.user.role;
+  if (!role) {
+    return null;
+  }
+
+  return {
+    token: parsed.token,
+    user: {
+      id: parsed.user.id,
+      name: parsed.user.name,
+      email: parsed.user.email,
+      role: role as AppRole,
+    },
+  };
+}
+
 export function loadSession(): SessionState | null {
   const raw = window.localStorage.getItem(AUTH_STORAGE_KEY);
-  if (!raw) {
+  if (raw) {
+    try {
+      const normalized = normalizeSession(JSON.parse(raw));
+      if (normalized) {
+        return normalized;
+      }
+      window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch {
+      window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    }
+  }
+
+  const newRaw = window.localStorage.getItem(NEW_AUTH_STORAGE_KEY);
+  if (!newRaw) {
     return null;
   }
 
   try {
-    return JSON.parse(raw) as SessionState;
+    const normalized = normalizeSession(JSON.parse(newRaw));
+    if (!normalized) {
+      window.localStorage.removeItem(NEW_AUTH_STORAGE_KEY);
+      return null;
+    }
+
+    // Keep legacy key in sync for old dashboard shells.
+    persistSession(normalized);
+    return normalized;
   } catch {
-    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    window.localStorage.removeItem(NEW_AUTH_STORAGE_KEY);
     return null;
   }
 }
 
 export function clearSession() {
   window.localStorage.removeItem(AUTH_STORAGE_KEY);
+  window.localStorage.removeItem(NEW_AUTH_STORAGE_KEY);
 }
 
 export function persistSession(session: SessionState) {
   window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+  window.localStorage.setItem(
+    NEW_AUTH_STORAGE_KEY,
+    JSON.stringify({
+      token: session.token,
+      user: {
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        role: [session.user.role],
+        status: "approved",
+      },
+    }),
+  );
 }
 
 export function getHomeRouteForRole(role?: AppRole | string) {

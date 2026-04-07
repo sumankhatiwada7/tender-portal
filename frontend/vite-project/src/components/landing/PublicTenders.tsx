@@ -1,28 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { API_BASE_URL } from "../../features/auth/auth.config";
-
-type TenderStatus = "open" | "awarded" | "closed";
-
-type TenderApiItem = {
-  _id?: string;
-  id?: string;
-  title?: string;
-  budget?: number;
-  deadline?: string;
-  status?: TenderStatus;
-  bidCount?: number;
-  category?: string;
-  createdBy?: { name?: string } | string;
-};
-
-type TenderResponse = {
-  success?: boolean;
-  tenders?: TenderApiItem[];
-};
-
-const OPEN_TENDERS_ENDPOINT = `${API_BASE_URL}/api/v1/tender?status=open&limit=5`;
+import { getAll } from "../../api/tender.api";
+import type { Tender } from "../../api/types";
 
 function formatBudget(value: number) {
   if (value >= 10000000) {
@@ -52,42 +31,50 @@ function formatDeadline(value: string) {
 function PublicTenders() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [tenders, setTenders] = useState<TenderApiItem[]>([]);
+  const [tenders, setTenders] = useState<Tender[]>([]);
 
   useEffect(() => {
+    let mounted = true;
+
     async function loadTenders() {
       setLoading(true);
       try {
-        const response = await axios.get<TenderResponse>(OPEN_TENDERS_ENDPOINT);
-        setTenders((response.data.tenders ?? []).slice(0, 5));
+        const response = await getAll();
+        if (mounted) {
+          setTenders(response.filter((item) => item.status === "open").slice(0, 5));
+        }
       } catch {
-        setTenders([]);
+        if (mounted) {
+          setTenders([]);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     }
 
     void loadTenders();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const rows = useMemo(() => {
-    const base = tenders.map((item) => {
-      const officeName = typeof item.createdBy === "string" ? item.createdBy : item.createdBy?.name;
-
-      return {
-        id: item._id ?? item.id ?? `${item.title}-${item.deadline}`,
-        title: item.title ?? "Untitled tender",
-        budget: typeof item.budget === "number" ? item.budget : 0,
-        deadline: item.deadline ?? "",
-        status: item.status ?? "open",
-        bidCount: typeof item.bidCount === "number" ? item.bidCount : 0,
-        office: officeName ?? "Government Office",
-        category: item.category ?? "General Procurement",
-      };
-    });
-
-    return base.slice(0, 5);
-  }, [tenders]);
+  const rows = useMemo(
+    () =>
+      tenders.map((item) => ({
+        id: item.id,
+        title: item.title,
+        budget: item.budget,
+        deadline: item.deadline,
+        status: item.status,
+        bidCount: 0,
+        office: "Government Office",
+        category: item.category,
+      })),
+    [tenders],
+  );
 
   return (
     <section className="bg-bg py-20" id="tenders">
@@ -116,7 +103,7 @@ function PublicTenders() {
                   className="w-full rounded-lg border-[1.5px] border-border bg-white p-5 text-left transition-colors duration-150 hover:border-green-main"
                   key={row.id}
                   type="button"
-                  onClick={() => navigate("/tenders")}
+                  onClick={() => navigate(`/tenders/${row.id}`)}
                 >
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>

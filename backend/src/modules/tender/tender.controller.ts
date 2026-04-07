@@ -1,6 +1,8 @@
 import type { apitype } from "../../core/types/apitype";
 import type { errorstype } from "../../core/types/errorstype";
-import type { tenderDocument,tenderlist,tenderResponse,tenderListResponse,tenderStatus,updateTenderInput, uploadDocument } from "./tendertype";
+import { bid } from "../bid/bid.model";
+import { User } from "../user/user.model";
+import type { publicPlatformStatsResponse, tenderDocument,tenderlist,tenderResponse,tenderListResponse,tenderStatus,updateTenderInput, uploadDocument } from "./tendertype";
 import Tender from "./tender.model";
 
 function toTenderListItem(tender: tenderDocument): tenderlist {
@@ -199,6 +201,40 @@ export async function GetPublicTenders(_req: any, res: any) {
             success: true,
             tenders: tenders.map((tender) => toTenderListItem(tender as unknown as tenderDocument))
         };
+        return res.status(200).json(payload);
+    } catch (_error) {
+        const payload: apitype = {
+            message: "Internal server error",
+            sucess: false
+        };
+        return res.status(500).json(payload);
+    }
+}
+
+export async function GetPublicPlatformStats(_req: any, res: any) {
+    try {
+        const [totalTenders, openTenders, tenderBudget, registeredBusinesses, governmentOffices, totalBids] = await Promise.all([
+            Tender.countDocuments(),
+            Tender.countDocuments({ status: "open" }),
+            Tender.aggregate([{ $group: { _id: null, total: { $sum: "$budget" } } }]),
+            User.countDocuments({ role: "business", status: "approved" }),
+            User.countDocuments({ role: "government", status: "approved" }),
+            bid.countDocuments(),
+        ]);
+
+        const payload: publicPlatformStatsResponse = {
+            message: "Public platform stats fetched successfully",
+            success: true,
+            stats: {
+                totalTenders,
+                openTenders,
+                totalTenderValue: Number(tenderBudget[0]?.total ?? 0),
+                registeredBusinesses,
+                governmentOffices,
+                totalBids,
+            }
+        };
+
         return res.status(200).json(payload);
     } catch (_error) {
         const payload: apitype = {

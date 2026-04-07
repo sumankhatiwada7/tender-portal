@@ -1,20 +1,36 @@
 import { Link } from "react-router-dom";
+import type { PublicPlatformStats } from "../../api/public.api";
 
-const statCards = [
-  { label: "Tender value", value: "NPR 4.2B+" },
-  { label: "Active tenders", value: "340" },
-  { label: "Registered businesses", value: "1240" },
-  { label: "Government offices", value: "56" },
-  { label: "Total bids submitted", value: "4800" },
-];
+function formatCompactNumber(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
 
-function Hero() {
+function formatCurrency(value: number) {
+  return `NPR ${formatCompactNumber(value)}`;
+}
+
+type HeroProps = {
+  stats: PublicPlatformStats | null;
+};
+
+function Hero({ stats }: HeroProps) {
+  const statCards = [
+    { label: "Tender value", value: formatCurrency(stats?.totalTenderValue ?? 0) },
+    { label: "Active tenders", value: String(stats?.openTenders ?? 0) },
+    { label: "Registered businesses", value: String(stats?.registeredBusinesses ?? 0) },
+    { label: "Government offices", value: String(stats?.governmentOffices ?? 0) },
+    { label: "Total bids submitted", value: String(stats?.totalBids ?? 0) },
+  ];
+
   return (
     <section className="bg-green-dark py-20 text-white" id="hero">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 md:grid-cols-2 md:px-12">
         <div>
           <p className="text-xs font-semibold tracking-widest text-green-accent">OFFICIAL DIGITAL PROCUREMENT</p>
-          <h1 className="font-syne mt-5 text-[clamp(2.4rem,4.5vw,3.8rem)] tracking-tight font-extrabold leading-[1.05]">
+          <h1 className="font-syne mt-5 text-[clamp(2.4rem,4.5vw,3.8rem)] font-extrabold leading-[1.05] tracking-tight">
             Nepal&apos;s trusted platform for transparent government tendering
           </h1>
           <p className="mt-5 max-w-xl text-base font-normal leading-8 text-green-light/85">
@@ -31,7 +47,7 @@ function Hero() {
           </div>
 
           <div className="mt-8 border-t border-green-main pt-4 text-sm text-green-light/85">
-            Admin verified · Cloudinary secured · Email notifications
+            Admin verified | Cloudinary secured | Email notifications
           </div>
         </div>
 
@@ -50,7 +66,7 @@ function Hero() {
                 <p className="font-syne mt-2 text-3xl font-extrabold text-white">{statCards[4].value}</p>
                 <p className="mt-1 text-sm text-green-light">{statCards[4].label}</p>
               </div>
-              <p className="text-sm font-semibold text-green-light">96% process completeness</p>
+              <p className="text-sm font-semibold text-green-light">{statCards[1].value} open now</p>
             </div>
             <div className="mt-4 h-2 rounded-lg bg-green-dark/40">
               <div className="h-2 w-[96%] rounded-lg bg-green-accent" />

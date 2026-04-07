@@ -1,12 +1,13 @@
 import express from "express";
 import { authMiddleware, authorizeRoles } from "../auth/auth.middleware";
-import { CreateTender,GetTenderById, GetAllTenders, GetPublicTenders, DeleteTender, UpdateTender } from "./tender.controller";
+import { CreateTender,GetPublicPlatformStats,GetTenderById, GetAllTenders, GetPublicTenders, DeleteTender, UpdateTender } from "./tender.controller";
 import { createBid } from "../bid/bid.controller";
 import { uploadDocument, handleUploadError } from "../../core/upload/upload.middleware";
 import  { roles } from "../auth/authtype";
 const router= express.Router();
 
 router.get("/public", GetPublicTenders);
+router.get("/public/stats", GetPublicPlatformStats);
 router.get("/public/:id", GetTenderById);
 
 /**
