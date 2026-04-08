@@ -8,6 +8,7 @@ import tenderRoute from "./modules/tender/tender.route";
 import bidRoute from "./modules/bid/bid.route";
 import adminRoute from "./modules/admin/admin.route";
 import uploadRoute from "./modules/upload/upload.route";
+import stripeRoute from "./modules/payment/payment.route";
 import { swaggerSpec } from "./core/swagger/swagger";
 import swaggerUi from "swagger-ui-express";
 import { connectDB } from "./core/database/db";
@@ -63,6 +64,7 @@ app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/tender", tenderRoute);
 app.use("/api/v1/admin", adminRoute);
 app.use("/api/v1/upload", uploadRoute);
+app.use("/api/v1/payment", stripeRoute)
 async function startServer() {
   try {
     await connectDB();
