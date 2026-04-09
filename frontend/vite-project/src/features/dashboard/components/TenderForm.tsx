@@ -5,6 +5,7 @@ import { DashboardIcon } from "./DashboardUi";
 
 type TenderFormProps = {
   initialTender?: Partial<TenderItem>;
+  initialValues?: Partial<TenderFormValues>;
   submitLabel: string;
   submittingLabel: string;
   onSubmit: (input: TenderMutationInput) => Promise<void>;
@@ -14,6 +15,7 @@ type TenderFormProps = {
 
 function TenderForm({
   initialTender,
+  initialValues,
   submitLabel,
   submittingLabel,
   onSubmit,
@@ -30,13 +32,13 @@ function TenderForm({
     formState: { errors, isSubmitting },
   } = useForm<TenderFormValues>({
     defaultValues: {
-      title: initialTender?.title ?? "",
-      description: initialTender?.description ?? "",
-      budget: initialTender?.budget ? String(initialTender.budget) : "",
-      deadline: initialTender?.deadline ? new Date(initialTender.deadline).toISOString().slice(0, 10) : "",
-      category: initialTender?.category ?? "",
-      location: initialTender?.location ?? "",
-      status: initialTender?.status === "closed" ? "closed" : "open",
+      title: initialValues?.title ?? initialTender?.title ?? "",
+      description: initialValues?.description ?? initialTender?.description ?? "",
+      budget: initialValues?.budget ?? (initialTender?.budget ? String(initialTender.budget) : ""),
+      deadline: initialValues?.deadline ?? (initialTender?.deadline ? new Date(initialTender.deadline).toISOString().slice(0, 10) : ""),
+      category: initialValues?.category ?? initialTender?.category ?? "",
+      location: initialValues?.location ?? initialTender?.location ?? "",
+      status: initialValues?.status ?? (initialTender?.status === "closed" ? "closed" : "open"),
     },
   });
 

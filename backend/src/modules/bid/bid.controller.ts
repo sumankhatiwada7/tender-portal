@@ -3,6 +3,7 @@ import type { apitype } from "../../core/types/apitype";
 import { errorstype } from "../../core/types/errorstype";
 import { bid } from "./bid.model";
 import Tender from "../tender/tender.model";
+import paymentModel from "../payment/payment.model";
 import { User } from "../user/user.model";
 import { Notifier } from "../../core/notification/notifier";
 import { EmailNotification } from "../emailnotification/email.notification";
@@ -71,8 +72,24 @@ export async function createBid(req: any, res: any) {
             const payload: apitype = { message: "Bid already exists for this tender", sucess: false }
             return res.status(400).json(payload);
         }
+        const availablePayment = await paymentModel.findOne({
+            userId: businessid,
+            type: "bid",
+            status: "completed",
+            remainingCredits: { $gt: 0 },
+        }).sort({ createdAt: 1 });
+
+        if (!availablePayment) {
+            const payload: apitype = { message: "A completed $1 bid payment is required before submitting.", sucess: false }
+            return res.status(402).json(payload);
+        }
         const newBid = new bid({ businessId: businessid, tenderId: tenderid, proposal, amount, documents });
         await newBid.save();
+        availablePayment.remainingCredits = Math.max(0, (availablePayment.remainingCredits ?? 0) - 1);
+        if (availablePayment.remainingCredits === 0) {
+            availablePayment.consumedAt = new Date();
+        }
+        await availablePayment.save();
         const createdBid = await bid.findById(newBid._id).populate("businessId", "name email");
         const payload: bidlistResponse = {
             message: "Bid created successfully",

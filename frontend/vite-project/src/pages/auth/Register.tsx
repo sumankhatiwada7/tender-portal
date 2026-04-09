@@ -72,7 +72,7 @@ export default function Register() {
     } catch (err) {
       const apiError = err as AxiosError<ApiErrorResponse>;
       if (!apiError.response) {
-        setError("Cannot reach the server. Ensure backend is running and VITE_API_URL is correct.");
+        setError("Cannot reach the server. Ensure the backend is running and your VITE_API_URL or VITE_API_BASE_URL value is correct.");
       } else {
         setError(apiError.response.data?.message ?? "Registration failed");
       }

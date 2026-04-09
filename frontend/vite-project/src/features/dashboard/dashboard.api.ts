@@ -4,6 +4,9 @@ import { clearSession, loadSession } from "../auth/auth.utils";
 import type {
   ApiMessageResponse,
   BidListResponse,
+  PaymentSessionInput,
+  PaymentSessionResponse,
+  PaymentSummaryResponse,
   TenderItem,
   TenderListResponse,
   TenderMutationInput,
@@ -13,6 +16,7 @@ import { getApiErrorMessage } from "./dashboard.utils";
 
 const TENDER_BASE_PATH = `${API_BASE_URL}/api/v1/tender`;
 const BID_BASE_PATH = `${API_BASE_URL}/api/v1/bid`;
+const PAYMENT_BASE_PATH = `${API_BASE_URL}/api/v1/payment`;
 
 function getAuthorizedConfig() {
   const session = loadSession();
@@ -125,5 +129,38 @@ export async function rejectBid(tenderId: string, bidId: string) {
     await axios.post<ApiMessageResponse>(`${BID_BASE_PATH}/reject/${tenderId}/${bidId}`, {}, getAuthorizedConfig());
   } catch (error) {
     throw normalizeApiFailure(error, "Unable to reject the bid.");
+  }
+}
+
+export async function createPaymentSession(input: PaymentSessionInput) {
+  try {
+    const response = await axios.post<PaymentSessionResponse>(`${PAYMENT_BASE_PATH}/create-session`, input, getAuthorizedConfig());
+    return response.data;
+  } catch (error) {
+    throw normalizeApiFailure(error, "Unable to start the payment checkout.");
+  }
+}
+
+export async function fetchPaymentSummary(type: "bid" | "tender") {
+  try {
+    const response = await axios.get<PaymentSummaryResponse>(`${PAYMENT_BASE_PATH}/summary`, {
+      ...getAuthorizedConfig(),
+      params: { type },
+    });
+    return response.data;
+  } catch (error) {
+    throw normalizeApiFailure(error, "Unable to load payment status.");
+  }
+}
+
+export async function verifyPaymentSession(sessionId: string) {
+  try {
+    const response = await axios.get<ApiMessageResponse>(`${PAYMENT_BASE_PATH}/verify-session`, {
+      ...getAuthorizedConfig(),
+      params: { sessionId },
+    });
+    return response.data;
+  } catch (error) {
+    throw normalizeApiFailure(error, "Unable to verify the payment session.");
   }
 }

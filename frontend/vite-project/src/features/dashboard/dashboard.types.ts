@@ -60,6 +60,26 @@ export type ApiMessageResponse = {
   errors?: Array<{ field?: string; message: string }>;
 };
 
+export type PaymentSessionResponse = {
+  sessionId: string;
+  url?: string | null;
+};
+
+export type PaymentSessionInput = {
+  type: "bid" | "tender";
+  quantity?: number;
+  returnPath?: string;
+};
+
+export type PaymentSummaryResponse = {
+  message: string;
+  success: boolean;
+  type: "bid" | "tender";
+  unitPriceUsd: number;
+  availableCredits: number;
+  pendingPayments: number;
+};
+
 export type TenderFormValues = {
   title: string;
   description: string;

@@ -1,6 +1,7 @@
 import type { apitype } from "../../core/types/apitype";
 import type { errorstype } from "../../core/types/errorstype";
 import { bid } from "../bid/bid.model";
+import paymentModel from "../payment/payment.model";
 import { User } from "../user/user.model";
 import type { publicPlatformStatsResponse, tenderDocument,tenderlist,tenderResponse,tenderListResponse,tenderStatus,updateTenderInput, uploadDocument } from "./tendertype";
 import Tender from "./tender.model";
@@ -122,6 +123,21 @@ export async function CreateTender(req: any, res: any) {
         }
         return res.status(409).json(payload);
     }
+    const availablePayment = await paymentModel.findOne({
+        userId: createdBy,
+        type: "tender",
+        status: "completed",
+        remainingCredits: { $gt: 0 },
+    }).sort({ createdAt: 1 });
+
+    if (!availablePayment) {
+        const payload: apitype = {
+            message: "A completed $1 tender payment is required before publishing.",
+            sucess: false,
+        };
+        return res.status(402).json(payload);
+    }
+
     const tendercreate = await Tender.create({
         title,
         description,
@@ -133,6 +149,12 @@ export async function CreateTender(req: any, res: any) {
         createdBy,
         status
     })
+    availablePayment.remainingCredits = Math.max(0, (availablePayment.remainingCredits ?? 0) - 1);
+    if (availablePayment.remainingCredits === 0) {
+        availablePayment.consumedAt = new Date();
+    }
+    availablePayment.consumedForTenderId = (tendercreate as any)._id;
+    await availablePayment.save();
     const payload:tenderResponse ={
         message:"Tender created successfully",
         success:true,

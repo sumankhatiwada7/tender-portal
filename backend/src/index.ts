@@ -19,7 +19,14 @@ const port = Number(process.env.PORT) || 5000;
 
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.use((req, res, next) => {
+  if (req.originalUrl === "/api/v1/payment/webhook") {
+    next();
+    return;
+  }
+
+  express.json()(req, res, next);
+});
 app.use(morgan("dev"));
 
 /**

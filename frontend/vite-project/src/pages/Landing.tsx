@@ -6,6 +6,7 @@ import Hero from "../components/landing/Hero";
 import TickerBar from "../components/landing/TickerBar";
 import StatsStrip from "../components/landing/StatsStrip";
 import HowItWorks from "../components/landing/HowItWorks";
+import PaymentInfoSection from "../components/landing/PaymentInfoSection";
 import PublicTenders from "../components/landing/PublicTenders";
 import RolesSplit from "../components/landing/RolesSplit";
 import TrustSection from "../components/landing/TrustSection";
@@ -60,6 +61,7 @@ function Landing() {
       <TickerBar />
       <StatsStrip stats={stats} />
       <HowItWorks />
+      <PaymentInfoSection />
       <PublicTenders />
       <RolesSplit />
       <TrustSection />

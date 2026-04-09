@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { create as createBid, getForTender } from "../../api/bid.api";
 import { getById } from "../../api/tender.api";
 import type { Bid, Tender } from "../../api/types";
+import { createPaymentSession, fetchPaymentSummary, verifyPaymentSession } from "../../features/dashboard/dashboard.api";
 import { useAuthStore } from "../../store/auth.store";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
@@ -17,6 +18,8 @@ function daysLeft(date: string) {
 
 export default function TenderDetail() {
   const { id = "" } = useParams();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated, user } = useAuthStore();
   const role = user?.role?.[0];
 
@@ -24,12 +27,15 @@ export default function TenderDetail() {
   const [error, setError] = useState("");
   const [tender, setTender] = useState<Tender | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
+  const [bidCredits, setBidCredits] = useState(0);
+  const [creditQuantity, setCreditQuantity] = useState(1);
 
   const [amount, setAmount] = useState("");
   const [proposal, setProposal] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [buyingCredits, setBuyingCredits] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -45,6 +51,11 @@ export default function TenderDetail() {
           const bidData = await getForTender(id);
           if (mounted) setBids(bidData);
         }
+
+        if (role === "business") {
+          const summary = await fetchPaymentSummary("bid");
+          if (mounted) setBidCredits(summary.availableCredits);
+        }
       } catch (err) {
         if (mounted) setError((err as Error).message || "Unable to load tender");
       } finally {
@@ -52,11 +63,42 @@ export default function TenderDetail() {
       }
     }
 
-    load();
+    void load();
     return () => {
       mounted = false;
     };
   }, [id, role]);
+
+  useEffect(() => {
+    if (role !== "business") {
+      return;
+    }
+
+    const paymentState = searchParams.get("payment");
+    const paymentType = searchParams.get("type");
+    const sessionId = searchParams.get("session_id");
+
+    if (!paymentState || paymentType !== "bid") {
+      return;
+    }
+
+    async function handlePaymentReturn() {
+      try {
+        if (paymentState === "success" && sessionId) {
+          await verifyPaymentSession(sessionId);
+        }
+
+        const summary = await fetchPaymentSummary("bid");
+        setBidCredits(summary.availableCredits);
+      } catch (err) {
+        setError((err as Error).message || "Unable to verify bid payment.");
+      } finally {
+        setSearchParams({}, { replace: true });
+      }
+    }
+
+    void handlePaymentReturn();
+  }, [role, searchParams, setSearchParams]);
 
   const bidStats = useMemo(() => {
     if (bids.length === 0) {
@@ -71,9 +113,36 @@ export default function TenderDetail() {
     };
   }, [bids]);
 
+  async function handleBuyBidCredits() {
+    setBuyingCredits(true);
+    setError("");
+
+    try {
+      const session = await createPaymentSession({
+        type: "bid",
+        quantity: creditQuantity,
+        returnPath: `${location.pathname}${location.search}`,
+      });
+
+      if (!session.url) {
+        throw new Error("Stripe checkout URL was not returned.");
+      }
+
+      window.location.assign(session.url);
+    } catch (err) {
+      setError((err as Error).message || "Unable to start bid payment.");
+      setBuyingCredits(false);
+    }
+  }
+
   async function onSubmitBid(event: React.FormEvent) {
     event.preventDefault();
     if (!amount || !proposal) return;
+
+    if (bidCredits < 1) {
+      setError("Buy at least one bid credit before submitting.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -82,6 +151,7 @@ export default function TenderDetail() {
       payload.append("proposal", proposal);
       files.forEach((file) => payload.append("documents", file));
       await createBid(id, payload);
+      setBidCredits((current) => Math.max(0, current - 1));
       setSubmitted(true);
     } catch (err) {
       setError((err as Error).message || "Unable to submit bid");
@@ -203,63 +273,95 @@ export default function TenderDetail() {
             <p className="mt-1 text-sm text-gray-600">Lowest bid: NPR {bidStats.low.toLocaleString()}</p>
             <p className="mt-1 text-sm text-gray-600">Highest bid: NPR {bidStats.high.toLocaleString()}</p>
             <Link to="/dashboard" className="mt-4 inline-block text-sm font-semibold text-green-main">
-              View all bids →
+              View all bids
             </Link>
           </div>
         ) : null}
 
         {isAuthenticated && role === "business" && tender?.status === "open" && !submitted ? (
-          <form onSubmit={onSubmitBid} className="space-y-4 rounded-xl border-[1.5px] border-gray-200 bg-white p-6">
-            <h3 className="font-syne text-2xl font-extrabold tracking-tight text-gray-900">Submit your bid</h3>
-            <p className="text-sm text-gray-500">Logged in as {user?.name}</p>
-            <div className="rounded-lg bg-green-light p-3 text-sm text-green-main">Bidding closes · {tender ? daysLeft(tender.deadline) : 0} days left</div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-800">Amount</label>
-              <div className="flex rounded-lg border-[1.5px] border-gray-200 bg-gray-50">
-                <span className="px-3 py-2.5 text-sm text-gray-500">NPR</span>
-                <input
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  type="number"
-                  className="w-full bg-transparent py-2.5 pr-3.5 text-sm outline-none"
-                />
+          <div className="space-y-4">
+            <div className="rounded-xl border-[1.5px] border-green-main/15 bg-green-light p-5">
+              <h3 className="font-syne text-xl font-extrabold tracking-tight text-green-dark">Bid credits</h3>
+              <p className="mt-2 text-sm text-green-main">Available credits: {bidCredits} | $1 per bid</p>
+              <div className="mt-4 flex items-center gap-3">
+                <button
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-green-main/20 bg-white text-lg font-semibold text-green-main disabled:opacity-50"
+                  type="button"
+                  onClick={() => setCreditQuantity((current) => Math.max(1, current - 1))}
+                  disabled={creditQuantity <= 1 || buyingCredits}
+                >
+                  -
+                </button>
+                <div className="min-w-20 rounded-xl border border-green-main/15 bg-white px-4 py-2 text-center text-sm font-semibold text-gray-900">
+                  {creditQuantity}
+                </div>
+                <button
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-green-main/20 bg-white text-lg font-semibold text-green-main disabled:opacity-50"
+                  type="button"
+                  onClick={() => setCreditQuantity((current) => Math.min(10, current + 1))}
+                  disabled={creditQuantity >= 10 || buyingCredits}
+                >
+                  +
+                </button>
               </div>
+              <p className="mt-2 text-xs text-green-main/80">Choose between 1 and 10 credits. Total: ${creditQuantity}</p>
+              <Button className="mt-4 w-full" disabled={buyingCredits} onClick={() => void handleBuyBidCredits()}>
+                {buyingCredits ? "Opening checkout..." : `Buy ${creditQuantity} Credit${creditQuantity > 1 ? "s" : ""}`}
+              </Button>
             </div>
 
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-800">Proposal</label>
-              <Textarea value={proposal} onChange={(e) => setProposal(e.target.value)} className="min-h-27.5" maxLength={500} />
-              <p className="mt-1 text-right text-xs text-gray-500">{proposal.length}/500</p>
-            </div>
+            <form onSubmit={onSubmitBid} className="space-y-4 rounded-xl border-[1.5px] border-gray-200 bg-white p-6">
+              <h3 className="font-syne text-2xl font-extrabold tracking-tight text-gray-900">Submit your bid</h3>
+              <p className="text-sm text-gray-500">Logged in as {user?.name}</p>
+              <div className="rounded-lg bg-green-light p-3 text-sm text-green-main">Bidding closes | {tender ? daysLeft(tender.deadline) : 0} days left</div>
 
-            <label className="block cursor-pointer rounded-lg border-[1.5px] border-dashed border-gray-300 p-3 text-sm text-gray-600 hover:bg-gray-50">
-              Upload documents (optional, max 3)
-              <input
-                type="file"
-                className="hidden"
-                multiple
-                onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 3))}
-              />
-            </label>
-            {files.length > 0 ? (
-              <ul className="space-y-1 text-xs text-gray-500">
-                {files.map((file) => (
-                  <li key={file.name}>{file.name}</li>
-                ))}
-              </ul>
-            ) : null}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-800">Amount</label>
+                <div className="flex rounded-lg border-[1.5px] border-gray-200 bg-gray-50">
+                  <span className="px-3 py-2.5 text-sm text-gray-500">NPR</span>
+                  <input
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    type="number"
+                    className="w-full bg-transparent py-2.5 pr-3.5 text-sm outline-none"
+                  />
+                </div>
+              </div>
 
-            <Button className="w-full" disabled={submitting}>
-              {submitting ? "Submitting..." : "Submit bid"}
-            </Button>
-            <p className="text-xs text-gray-500">You can submit only one bid per tender.</p>
-          </form>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-800">Proposal</label>
+                <Textarea value={proposal} onChange={(e) => setProposal(e.target.value)} className="min-h-27.5" maxLength={500} />
+                <p className="mt-1 text-right text-xs text-gray-500">{proposal.length}/500</p>
+              </div>
+
+              <label className="block cursor-pointer rounded-lg border-[1.5px] border-dashed border-gray-300 p-3 text-sm text-gray-600 hover:bg-gray-50">
+                Upload documents (optional, max 3)
+                <input
+                  type="file"
+                  className="hidden"
+                  multiple
+                  onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 3))}
+                />
+              </label>
+              {files.length > 0 ? (
+                <ul className="space-y-1 text-xs text-gray-500">
+                  {files.map((file) => (
+                    <li key={file.name}>{file.name}</li>
+                  ))}
+                </ul>
+              ) : null}
+
+              <Button className="w-full" disabled={submitting || bidCredits < 1}>
+                {submitting ? "Submitting..." : bidCredits < 1 ? "Buy bid credit first" : "Submit bid"}
+              </Button>
+              <p className="text-xs text-gray-500">One credit is used every time you submit a bid.</p>
+            </form>
+          </div>
         ) : null}
 
         {submitted ? (
           <div className="rounded-xl border border-green-main/20 bg-green-light p-6 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-main text-white">✓</div>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-main text-white">OK</div>
             <h3 className="mt-4 font-syne text-2xl font-extrabold tracking-tight text-green-dark">Bid submitted!</h3>
             <p className="mt-2 text-sm text-green-main">Your proposal has been recorded successfully.</p>
           </div>
