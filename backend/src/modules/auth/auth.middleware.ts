@@ -3,6 +3,10 @@ import Jwt from "jsonwebtoken";
 import { jwtpayload, authrequest, roles } from "./authtype";
 import { apitype } from "../../core/types/apitype";
 
+function getAccessSecret() {
+    return process.env.jwtkey || process.env.JWT_SECRET;
+}
+
 export const authMiddleware = (req: authrequest, res: Response, next: NextFunction) => {
     try {
         const authHeader = req.headers.authorization;
@@ -23,7 +27,8 @@ export const authMiddleware = (req: authrequest, res: Response, next: NextFuncti
             return res.status(401).json(payload);
         }
 
-        if (!process.env.jwtkey) {
+        const jwtSecret = getAccessSecret();
+        if (!jwtSecret) {
             const payload: apitype = {
                 message: "JWT secret not configured",
                 sucess: false
@@ -31,14 +36,16 @@ export const authMiddleware = (req: authrequest, res: Response, next: NextFuncti
             return res.status(500).json(payload);
         }
 
-        const decoded = Jwt.verify(token, process.env.jwtkey) as unknown as jwtpayload;
+        const decoded = Jwt.verify(token, jwtSecret) as unknown as jwtpayload;
         req.user = decoded;
         next();
 
-    } catch (_error) {
-        console.error(_error);
+    } catch (error) {
+        const message = error instanceof Jwt.TokenExpiredError
+            ? "Access token expired"
+            : "Invalid token";
         const payload: apitype = {
-            message: "Invalid token",
+            message,
             sucess: false
         };
         return res.status(401).json(payload);

@@ -15,8 +15,24 @@ type uploadedDocumentInput = {
 
 type loginresponse = apitype & {
     token: string;
+    accessToken: string;
+    accesstoken: string;
     user: userlist;
 };
+const Refresh_Cookie_Option={
+    httpOnly:true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict" as const,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+}
+
+function getAccessSecret() {
+    return process.env.jwtkey || process.env.JWT_SECRET;
+}
+
+function getRefreshSecret() {
+    return process.env.jwtrefreshkey || process.env.JWT_REFRESH_SECRET;
+}
 
 function tolistitem(user: userdocument): userlist {
     return {
@@ -47,6 +63,20 @@ function mapUploadedDocuments(files: uploadedDocumentInput[]) {
         .filter((doc): doc is { url: string; originalname: string; uploadedAt: Date } => Boolean(doc));
 }
 
+function generateAccessToken(USERID:string,ROLE:roles){
+    const jwtsecret=getAccessSecret();
+    if(!jwtsecret){
+        throw new Error("JWT secret is not defined in environment variables");
+    }
+    return jwt.sign({id:USERID,role:ROLE},jwtsecret,{expiresIn:"15m"})
+}
+function generateRefreshToken(USERID:string){
+    const refreshSecret=getRefreshSecret();
+    if(!refreshSecret){
+        throw new Error("JWT refresh secret is not defined in environment variables");
+    }
+    return jwt.sign({id:USERID},refreshSecret,{expiresIn:"7d"})
+}
 export async function Register(req: any, res: any) {
     try {
         const data = req.body || {};
@@ -219,22 +249,19 @@ export async function Login(req: any, res: any) {
             return res.status(401).json(payload);
         }
 
-        const jwtSecret = process.env.jwtkey;
-        if (!jwtSecret) {
-            const payload: apitype = {
-                message: "JWT configuration missing",
-                sucess: false,
-            };
-            return res.status(500).json(payload);
-        }
-
-    const tokendata = { id: String(existinguser._id), role: existinguser.role as roles };
-    const token = jwt.sign(tokendata, jwtSecret, { expiresIn: "7d" })
+        
+    const accesstoken = generateAccessToken(String(existinguser.id),existinguser.role as roles);
+    const refreshtoken = generateRefreshToken(String(existinguser.id));
+    existinguser.refreshToken=refreshtoken;
+    await existinguser.save();
+    res.cookie("refreshToken", refreshtoken, Refresh_Cookie_Option);
 
     const payload: loginresponse = {
         message: "Login successful",
         sucess: true,
-        token,
+        token: accesstoken,
+        accessToken: accesstoken,
+        accesstoken,
         user: tolistitem(existinguser as unknown as userdocument),
     };
 
@@ -246,4 +273,49 @@ export async function Login(req: any, res: any) {
     };
     return res.status(500).json(payload);
 }
+}
+
+export async function Refresh(req: any, res: any) {
+    try {
+        // read from httpOnly cookie
+        const token = req.cookies?.refreshToken || req.body?.refreshToken;
+        if (!token) {
+            const payload: apitype = { message: "No refresh token", sucess: false };
+            return res.status(401).json(payload);
+        }
+
+        const secret = getRefreshSecret();
+        if (!secret) {
+            const payload: apitype = { message: "JWT_REFRESH_SECRET not configured", sucess: false };
+            return res.status(500).json(payload);
+        }
+
+        // verify refresh token
+        const decoded = jwt.verify(token, secret) as { id: string };
+
+        // find user and check token matches DB
+        const user = await User.findById(decoded.id);
+        if (!user || user.refreshToken !== token) {
+            const payload: apitype = { message: "Invalid refresh token", sucess: false };
+            return res.status(403).json(payload);
+        }
+
+        // rotate tokens so stolen old refresh tokens are invalidated
+        const newAccessToken = generateAccessToken(String(user._id), user.role as roles);
+        const newRefreshToken = generateRefreshToken(String(user._id));
+        user.refreshToken = newRefreshToken;
+        await user.save();
+        res.cookie("refreshToken", newRefreshToken, Refresh_Cookie_Option);
+
+        return res.status(200).json({
+            message: "Token refreshed successfully",
+            sucess: true,
+            token: newAccessToken,
+            accessToken: newAccessToken,
+        });
+
+    } catch (_error) {
+        const payload: apitype = { message: "Invalid or expired refresh token", sucess: false };
+        return res.status(403).json(payload);
+    }
 }

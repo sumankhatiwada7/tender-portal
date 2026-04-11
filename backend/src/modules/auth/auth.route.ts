@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import { Register, Login } from './auth.controller';
+import { Register, Login ,Refresh} from './auth.controller';
 import { uploadVerification, handleUploadError } from '../../core/upload/upload.middleware';
 
 /**
@@ -72,5 +72,6 @@ router.post(
  *               $ref: '#/components/schemas/ApiResponse'
  */
 router.post('/login',Login);
+router.post('/refresh',Refresh);
 
 export default router ;

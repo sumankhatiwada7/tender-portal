@@ -80,6 +80,10 @@ const userSchema = new mongoose.Schema({
             default: "",
         },
     },
+    refreshToken: {
+        type: String,
+        default: null,
+    }
 })
 
 export const User = mongoose.model("User", userSchema)

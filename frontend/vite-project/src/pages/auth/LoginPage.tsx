@@ -79,6 +79,8 @@ function LoginPage() {
       const response = await axios.post<LoginResponse>(`${AUTH_BASE_PATH}/login`, {
         email: values.email.trim(),
         password: values.password,
+      }, {
+        withCredentials: true,
       });
 
       const nextSession = {
