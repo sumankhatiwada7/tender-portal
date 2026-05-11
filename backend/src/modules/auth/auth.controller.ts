@@ -31,7 +31,12 @@ function getAccessSecret() {
 }
 
 function getRefreshSecret() {
-    return process.env.jwtrefreshkey || process.env.JWT_REFRESH_SECRET;
+    return (
+        process.env.jwtrefreshkey ||
+        process.env.JWT_REFRESH_SECRET ||
+        process.env.jwtkey ||
+        process.env.JWT_SECRET
+    );
 }
 
 function tolistitem(user: userdocument): userlist {

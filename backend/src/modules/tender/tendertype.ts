@@ -21,6 +21,7 @@ export interface tenderDocument extends Document{
     documents:uploadDocument[],
     createdBy:string,
     status:tenderStatus
+    closedAt?: Date
     awardedto?:Types.ObjectId
 }
 export type tenderlist ={
@@ -34,6 +35,7 @@ export type tenderlist ={
     documents:uploadDocument[],
     createdBy:string,
     status:tenderStatus
+    closedAt?: Date
     awardedto?:string
 }
 export type tenderResponse ={

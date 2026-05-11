@@ -62,6 +62,9 @@ const tenderSchema= new mongoose.Schema({
         enum:["open","closed","awarded"],
         required:true
     },
+    closedAt:{
+        type:Date,
+    },
     awardedto:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"business",

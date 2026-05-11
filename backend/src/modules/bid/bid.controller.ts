@@ -159,9 +159,25 @@ export async function acceptbid(req: any, res: any) {
             const payload: apitype = { message: "Tender already awarded", sucess: false }
             return res.status(400).json(payload);
         }
+        if (tinderexisted.status !== "closed") {
+            const payload: apitype = { message: "Tender must be closed before accepting a bid", sucess: false }
+            return res.status(400).json(payload);
+        }
         if (String(tinderexisted.createdBy) !== String(req.user.id)) {
             const payload: apitype = { message: "You are not the owner of this tender", sucess: false }
             return res.status(403).json(payload);
+        }
+
+        const closedAt = tinderexisted.closedAt instanceof Date ? tinderexisted.closedAt : undefined;
+        if (!closedAt || Number.isNaN(closedAt.getTime())) {
+            const payload: apitype = { message: "Tender close time is not recorded", sucess: false }
+            return res.status(400).json(payload);
+        }
+
+        const acceptanceDeadline = new Date(closedAt.getTime() + 2 * 24 * 60 * 60 * 1000);
+        if (new Date() > acceptanceDeadline) {
+            const payload: apitype = { message: "Bid acceptance window has expired", sucess: false }
+            return res.status(400).json(payload);
         }
 
         // update accepted bid

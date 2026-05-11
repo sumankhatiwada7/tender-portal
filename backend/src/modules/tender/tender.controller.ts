@@ -373,6 +373,14 @@ export async function UpdateTender(req: any, res: any) {
             updateData.documents = normalizeDocuments(data.documents);
         }
 
+        if (data.status === "closed" && existing.status !== "closed") {
+            (updateData as any).closedAt = new Date();
+        }
+
+        if (data.status === "open") {
+            (updateData as any).closedAt = undefined;
+        }
+
         const tender1 = await Tender.findByIdAndUpdate(id, updateData, {
             new: true,
             runValidators: true

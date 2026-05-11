@@ -1,11 +1,15 @@
 import axios from "axios";
 import { authStorageKey } from "../store/auth.store";
+import { API_BASE_URL } from "../features/auth/auth.config";
 
 const explicitApiUrl = (import.meta.env.VITE_API_URL ?? "").trim();
 const legacyBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/$/, "");
+const resolvedBaseUrl = API_BASE_URL ? `${API_BASE_URL}/api/v1` : "/api/v1";
+
+const finalBase = explicitApiUrl || (legacyBaseUrl ? `${legacyBaseUrl}/api/v1` : resolvedBaseUrl);
 
 const instance = axios.create({
-  baseURL: explicitApiUrl || (legacyBaseUrl ? `${legacyBaseUrl}/api/v1` : "http://localhost:5000/api/v1"),
+  baseURL: finalBase,
   withCredentials: true,
 });
 

@@ -19,8 +19,24 @@ const app = express();
 const port = Number(process.env.PORT) || 5000;
 
 app.use(helmet());
+const allowedOrigins = String(process.env.FRONTEND_URL ?? "http://localhost:5173").split(",").map((s) => s.trim()).filter(Boolean);
+
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => {
+    // allow non-browser requests like server-to-server or tools (no origin)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.length === 0) {
+      // fallback to reflecting origin
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("CORS policy: Origin not allowed"));
+  },
   credentials: true,
 }));
 app.use(cookieParser());

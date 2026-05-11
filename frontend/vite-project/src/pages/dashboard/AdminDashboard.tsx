@@ -111,7 +111,12 @@ export default function AdminDashboard() {
                     <p className="text-sm text-gray-500">{user.email}</p>
                   </div>
                 </div>
-                <Badge variant="pending">{Array.isArray(user.role) ? user.role[0] : user.role}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={user.status}>{user.status}</Badge>
+                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+                    {Array.isArray(user.role) ? user.role[0] : user.role}
+                  </span>
+                </div>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-gray-600">
