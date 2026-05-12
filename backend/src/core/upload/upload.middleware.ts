@@ -8,7 +8,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const profileFormats = new Set(["jpg", "jpeg", "png", "webp"]);
 const verificationFormats = new Set(["jpg", "jpeg", "png", "pdf", "doc", "docx"]);
-const documentFormats = new Set(["pdf", "doc", "docx"]);
+const documentFormats = new Set(["pdf", "doc", "docx", "png"]);
 
 function getExtension(fileName: string): string {
   return path.extname(fileName || "").replace(".", "").toLowerCase();
@@ -65,7 +65,7 @@ const verificationStorage = buildStorage(
 const documentStorage = buildStorage(
   "tender-system/documents",
   documentFormats,
-  () => "raw"
+  (ext) => (profileFormats.has(ext) ? "image" : "raw")
 );
 
 function fileFilter(allowedFormats: Set<string>) {

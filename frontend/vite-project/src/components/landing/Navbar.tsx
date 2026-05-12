@@ -1,7 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPaymentSession, fetchPaymentSummary, verifyPaymentSession } from "../../features/dashboard/dashboard.api";
 import { useAuthStore } from "../../store/auth.store";
+
+function getInitials(name?: string) {
+  if (!name) {
+    return "TN";
+  }
+
+  const initials = name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
+  return initials || "TN";
+}
 
 function Navbar() {
   const navigate = useNavigate();
@@ -10,11 +25,13 @@ function Navbar() {
   const { isAuthenticated, user, logout } = useAuthStore();
   const role = user?.role?.[0];
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const [bidCredits, setBidCredits] = useState(0);
   const [creditQuantity, setCreditQuantity] = useState(1);
   const [isBuyingCredits, setIsBuyingCredits] = useState(false);
 
   const dashboardPath = role === "admin" ? "/admin" : role === "government" ? "/government" : "/tenders";
+  const userInitials = getInitials(user?.name);
 
   function navigateToSection(sectionId: string) {
     if (location.pathname === "/") {
@@ -81,6 +98,22 @@ function Navbar() {
     void handlePaymentReturn();
   }, [isAuthenticated, role, searchParams, setSearchParams]);
 
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!accountMenuRef.current?.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+
+    if (dropdownOpen) {
+      document.addEventListener("mousedown", handlePointerDown);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [dropdownOpen]);
+
   async function handleBuyCredits() {
     setIsBuyingCredits(true);
 
@@ -137,20 +170,28 @@ function Navbar() {
               </Link>
             </>
           ) : role === "business" ? (
-            <div className="relative">
+            <div className="relative" ref={accountMenuRef}>
               <button
-                className="flex items-center gap-3 rounded-lg border border-green-main px-4 py-2 text-sm font-semibold text-green-main"
+                className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-green-main bg-green-light text-sm font-extrabold text-green-main shadow-sm transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-green-main focus:ring-offset-2"
                 type="button"
+                aria-label="Open account menu"
+                aria-expanded={dropdownOpen}
                 onClick={() => setDropdownOpen((current) => !current)}
               >
-                <span>{user?.name}</span>
-                <span className="rounded-full bg-green-light px-2 py-1 text-xs text-green-main">{bidCredits} credits</span>
+                <span>{userInitials}</span>
               </button>
 
               {dropdownOpen ? (
-                <div className="absolute right-0 top-full mt-3 w-80 rounded-2xl border border-green-main/15 bg-white p-4 shadow-xl">
-                  <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
-                  <p className="mt-1 text-xs text-gray-500">{user?.email}</p>
+                <div className="absolute right-0 top-full mt-3 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-green-main/15 bg-white p-4 shadow-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-main text-sm font-extrabold text-white">
+                      {userInitials}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-gray-900">{user?.name}</p>
+                      <p className="mt-1 truncate text-xs text-gray-500">{user?.email}</p>
+                    </div>
+                  </div>
                   <p className="mt-4 text-sm font-medium text-gray-900">Bid credits</p>
                   <p className="mt-1 text-sm text-gray-600">Available: {bidCredits} | $1 per bid</p>
 
@@ -185,13 +226,18 @@ function Navbar() {
                     {isBuyingCredits ? "Opening checkout..." : `Buy ${creditQuantity} Credit${creditQuantity > 1 ? "s" : ""}`}
                   </button>
 
-                  <Link className="mt-3 block rounded-lg border border-green-main px-4 py-2 text-center text-sm font-semibold text-green-main" to={dashboardPath}>
+                  <Link
+                    className="mt-3 block rounded-lg border border-green-main px-4 py-2 text-center text-sm font-semibold text-green-main"
+                    to={dashboardPath}
+                    onClick={() => setDropdownOpen(false)}
+                  >
                     Dashboard
                   </Link>
                   <button
                     className="mt-3 w-full rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700"
                     type="button"
                     onClick={() => {
+                      setDropdownOpen(false);
                       logout();
                       navigate("/login");
                     }}
