@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPaymentSession, fetchPaymentSummary, verifyPaymentSession } from "../../features/dashboard/dashboard.api";
 import { useAuthStore } from "../../store/auth.store";
+import NotificationBell from "../notifications/NotificationBell";
 
 function getInitials(name?: string) {
   if (!name) {
@@ -170,85 +171,89 @@ function Navbar() {
               </Link>
             </>
           ) : role === "business" ? (
-            <div className="relative" ref={accountMenuRef}>
-              <button
-                className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-green-main bg-green-light text-sm font-extrabold text-green-main shadow-sm transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-green-main focus:ring-offset-2"
-                type="button"
-                aria-label="Open account menu"
-                aria-expanded={dropdownOpen}
-                onClick={() => setDropdownOpen((current) => !current)}
-              >
-                <span>{userInitials}</span>
-              </button>
+            <>
+              <NotificationBell compact tone="green" />
+              <div className="relative" ref={accountMenuRef}>
+                <button
+                  className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-green-main bg-green-light text-sm font-extrabold text-green-main shadow-sm transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-green-main focus:ring-offset-2"
+                  type="button"
+                  aria-label="Open account menu"
+                  aria-expanded={dropdownOpen}
+                  onClick={() => setDropdownOpen((current) => !current)}
+                >
+                  <span>{userInitials}</span>
+                </button>
 
-              {dropdownOpen ? (
-                <div className="absolute right-0 top-full mt-3 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-green-main/15 bg-white p-4 shadow-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-main text-sm font-extrabold text-white">
-                      {userInitials}
+                {dropdownOpen ? (
+                  <div className="absolute right-0 top-full mt-3 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-green-main/15 bg-white p-4 shadow-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-main text-sm font-extrabold text-white">
+                        {userInitials}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-gray-900">{user?.name}</p>
+                        <p className="mt-1 truncate text-xs text-gray-500">{user?.email}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-gray-900">{user?.name}</p>
-                      <p className="mt-1 truncate text-xs text-gray-500">{user?.email}</p>
-                    </div>
-                  </div>
-                  <p className="mt-4 text-sm font-medium text-gray-900">Bid credits</p>
-                  <p className="mt-1 text-sm text-gray-600">Available: {bidCredits} | $1 per bid</p>
+                    <p className="mt-4 text-sm font-medium text-gray-900">Bid credits</p>
+                    <p className="mt-1 text-sm text-gray-600">Available: {bidCredits} | $1 per bid</p>
 
-                  <div className="mt-4 flex items-center gap-3">
+                    <div className="mt-4 flex items-center gap-3">
+                      <button
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-green-main/20 text-lg font-semibold text-green-main disabled:opacity-50"
+                        type="button"
+                        onClick={() => setCreditQuantity((current) => Math.max(1, current - 1))}
+                        disabled={creditQuantity <= 1 || isBuyingCredits}
+                      >
+                        -
+                      </button>
+                      <div className="min-w-20 rounded-xl border border-green-main/15 px-4 py-2 text-center text-sm font-semibold text-gray-900">
+                        {creditQuantity}
+                      </div>
+                      <button
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-green-main/20 text-lg font-semibold text-green-main disabled:opacity-50"
+                        type="button"
+                        onClick={() => setCreditQuantity((current) => Math.min(10, current + 1))}
+                        disabled={creditQuantity >= 10 || isBuyingCredits}
+                      >
+                        +
+                      </button>
+                    </div>
+
                     <button
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-green-main/20 text-lg font-semibold text-green-main disabled:opacity-50"
+                      className="mt-4 w-full rounded-lg bg-green-main px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                       type="button"
-                      onClick={() => setCreditQuantity((current) => Math.max(1, current - 1))}
-                      disabled={creditQuantity <= 1 || isBuyingCredits}
+                      onClick={() => void handleBuyCredits()}
+                      disabled={isBuyingCredits}
                     >
-                      -
+                      {isBuyingCredits ? "Opening checkout..." : `Buy ${creditQuantity} Credit${creditQuantity > 1 ? "s" : ""}`}
                     </button>
-                    <div className="min-w-20 rounded-xl border border-green-main/15 px-4 py-2 text-center text-sm font-semibold text-gray-900">
-                      {creditQuantity}
-                    </div>
-                    <button
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-green-main/20 text-lg font-semibold text-green-main disabled:opacity-50"
-                      type="button"
-                      onClick={() => setCreditQuantity((current) => Math.min(10, current + 1))}
-                      disabled={creditQuantity >= 10 || isBuyingCredits}
+
+                    <Link
+                      className="mt-3 block rounded-lg border border-green-main px-4 py-2 text-center text-sm font-semibold text-green-main"
+                      to={dashboardPath}
+                      onClick={() => setDropdownOpen(false)}
                     >
-                      +
+                      Dashboard
+                    </Link>
+                    <button
+                      className="mt-3 w-full rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700"
+                      type="button"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        logout();
+                        navigate("/login");
+                      }}
+                    >
+                      Logout
                     </button>
                   </div>
-
-                  <button
-                    className="mt-4 w-full rounded-lg bg-green-main px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                    type="button"
-                    onClick={() => void handleBuyCredits()}
-                    disabled={isBuyingCredits}
-                  >
-                    {isBuyingCredits ? "Opening checkout..." : `Buy ${creditQuantity} Credit${creditQuantity > 1 ? "s" : ""}`}
-                  </button>
-
-                  <Link
-                    className="mt-3 block rounded-lg border border-green-main px-4 py-2 text-center text-sm font-semibold text-green-main"
-                    to={dashboardPath}
-                    onClick={() => setDropdownOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
-                  <button
-                    className="mt-3 w-full rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700"
-                    type="button"
-                    onClick={() => {
-                      setDropdownOpen(false);
-                      logout();
-                      navigate("/login");
-                    }}
-                  >
-                    Logout
-                  </button>
-                </div>
-              ) : null}
-            </div>
+                ) : null}
+              </div>
+            </>
           ) : (
             <>
+              <NotificationBell compact tone="green" />
               <span className="hidden text-sm font-semibold text-text md:inline">{user?.name}</span>
               <Link className="rounded-lg border border-green-main px-4 py-2 text-sm font-semibold text-green-main" to={dashboardPath}>
                 Dashboard

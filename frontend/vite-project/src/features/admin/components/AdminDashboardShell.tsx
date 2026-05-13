@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { clearSession, loadSession } from "../../auth/auth.utils";
 import type { AdminOutletContext } from "../admin.types";
 import { CardSurface, DashboardIcon } from "../../dashboard/components/DashboardUi";
+import NotificationBell from "../../../components/notifications/NotificationBell";
 
 const navigationItems = [
   { to: "/admin", label: "Dashboard", icon: "grid" as const, end: true },
@@ -116,36 +117,40 @@ function AdminDashboardShell() {
               </div>
             </div>
 
-            <div className="relative">
-              <button
-                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-slate-300"
-                type="button"
-                onClick={() => setProfileOpen((current) => !current)}
-              >
-                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-950 text-white">
-                  <DashboardIcon className="h-5 w-5" name="user" />
-                </div>
-                <div className="hidden text-sm sm:block">
-                  <p className="font-semibold text-slate-900">{session.user.name}</p>
-                  <p className="text-slate-500">{session.user.role}</p>
-                </div>
-              </button>
+            <div className="flex items-center gap-3">
+              <NotificationBell tone="teal" />
 
-              {profileOpen ? (
-                <CardSurface className="absolute right-0 mt-3 w-72 p-4">
-                  <p className="text-sm font-semibold text-slate-950">{session.user.name}</p>
-                  <p className="mt-1 text-sm text-slate-500">{session.user.email}</p>
-                  <div className="mt-4 grid gap-2">
-                    <button
-                      className="rounded-2xl px-3 py-2 text-left text-sm font-medium text-rose-700 transition hover:bg-rose-50"
-                      type="button"
-                      onClick={handleLogout}
-                    >
-                      Sign out
-                    </button>
+              <div className="relative">
+                <button
+                  className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-slate-300"
+                  type="button"
+                  onClick={() => setProfileOpen((current) => !current)}
+                >
+                  <div className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-950 text-white">
+                    <DashboardIcon className="h-5 w-5" name="user" />
                   </div>
-                </CardSurface>
-              ) : null}
+                  <div className="hidden text-sm sm:block">
+                    <p className="font-semibold text-slate-900">{session.user.name}</p>
+                    <p className="text-slate-500">{session.user.role}</p>
+                  </div>
+                </button>
+
+                {profileOpen ? (
+                  <CardSurface className="absolute right-0 mt-3 w-72 p-4">
+                    <p className="text-sm font-semibold text-slate-950">{session.user.name}</p>
+                    <p className="mt-1 text-sm text-slate-500">{session.user.email}</p>
+                    <div className="mt-4 grid gap-2">
+                      <button
+                        className="rounded-2xl px-3 py-2 text-left text-sm font-medium text-rose-700 transition hover:bg-rose-50"
+                        type="button"
+                        onClick={handleLogout}
+                      >
+                        Sign out
+                      </button>
+                    </div>
+                  </CardSurface>
+                ) : null}
+              </div>
             </div>
           </div>
         </header>

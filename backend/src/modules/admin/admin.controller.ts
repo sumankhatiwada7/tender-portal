@@ -6,6 +6,7 @@ import {Notifier} from  "../../core/notification/notifier"
 import {templates} from "../../core/notification/template"
 import { EmailNotification } from "../emailnotification/email.notification";
 import { errorstype } from "../../core/types/errorstype";
+import { createNotification } from "../inappnotification/notification.service";
 
 function tolistitem(user: userdocument): userlist {
     return {
@@ -84,6 +85,17 @@ export async function approvedUser(req:any,res:any){
             approvedUser.status="approved"
             await approvedUser.save()
 
+            await createNotification({
+                recipient: String((approvedUser as any)._id),
+                type: "account_approved",
+                title: "Account approved",
+                message: "Your account has been approved. You can now use Tender Nepal.",
+                link: "/dashboard",
+                meta: {
+                    userId: String((approvedUser as any)._id),
+                },
+            });
+
             const t = templates.accountApproved(approvedUser.name);
             await new Notifier(
                 new EmailNotification(approvedUser.email,t.html,t.subject)
@@ -119,6 +131,17 @@ export async function rejectUser(req: any, res: any) {
 
         user.status = "rejected";
         await user.save();
+
+        await createNotification({
+            recipient: String((user as any)._id),
+            type: "account_rejected",
+            title: "Account rejected",
+            message: "Your account request was rejected. Please contact support for details.",
+            link: "/login",
+            meta: {
+                userId: String((user as any)._id),
+            },
+        });
 
         // send rejection email
         const t = templates.accountRejected(user.name);

@@ -3,6 +3,7 @@ import type { errorstype } from "../../core/types/errorstype";
 import { bid } from "../bid/bid.model";
 import paymentModel from "../payment/payment.model";
 import { User } from "../user/user.model";
+import { createNotifications } from "../inappnotification/notification.service";
 import type { publicPlatformStatsResponse, tenderDocument,tenderlist,tenderResponse,tenderListResponse,tenderStatus,updateTenderInput, uploadDocument } from "./tendertype";
 import Tender from "./tender.model";
 
@@ -155,6 +156,20 @@ export async function CreateTender(req: any, res: any) {
     }
     availablePayment.consumedForTenderId = (tendercreate as any)._id;
     await availablePayment.save();
+    const approvedBusinesses = await User.find({ role: "business", status: "approved" }).select("_id");
+    await createNotifications(
+        approvedBusinesses.map((business) => ({
+            recipient: String((business as any)._id),
+            type: "new_tender",
+            title: "New tender published",
+            message: `${title} is now open for bids.`,
+            link: `/tenders/${String((tendercreate as any)._id)}`,
+            meta: {
+                tenderId: String((tendercreate as any)._id),
+                userId: createdBy,
+            },
+        }))
+    );
     const payload:tenderResponse ={
         message:"Tender created successfully",
         success:true,

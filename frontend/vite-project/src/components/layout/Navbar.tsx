@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/auth.store";
+import NotificationBell from "../notifications/NotificationBell";
 import Button from "../ui/Button";
 
 function roleLinks(role?: string) {
@@ -70,6 +71,7 @@ export default function Navbar() {
           </>
         ) : (
           <>
+            <NotificationBell compact tone="green" />
             {role === "admin" ? (
               <span className="rounded-full bg-green-light px-3 py-1 text-xs font-semibold text-green-main">Admin</span>
             ) : (

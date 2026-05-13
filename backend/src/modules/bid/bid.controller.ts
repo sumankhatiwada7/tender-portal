@@ -8,6 +8,7 @@ import { User } from "../user/user.model";
 import { Notifier } from "../../core/notification/notifier";
 import { EmailNotification } from "../emailnotification/email.notification";
 import { templates } from "../../core/notification/template";
+import { createNotification } from "../inappnotification/notification.service";
 
 function tolistitem(bid: BidDocument): bidlist {
     const businessDetails = (bid as any).businessId && typeof (bid as any).businessId === "object"
@@ -67,6 +68,11 @@ export async function createBid(req: any, res: any) {
         if (errors.length > 0) {
             return res.status(400).json({ errors });
         }
+        const tender = await Tender.findById(tenderid);
+        if (!tender) {
+            const payload: apitype = { message: "Tender not found", sucess: false };
+            return res.status(404).json(payload);
+        }
         const existingBid = await bid.findOne({ businessId: businessid, tenderId: tenderid });
         if (existingBid) {
             const payload: apitype = { message: "Bid already exists for this tender", sucess: false }
@@ -91,6 +97,26 @@ export async function createBid(req: any, res: any) {
         }
         await availablePayment.save();
         const createdBid = await bid.findById(newBid._id).populate("businessId", "name email");
+        const businessDetails = (createdBid as any)?.businessId;
+        const notification = await createNotification({
+            recipient: String(tender.createdBy),
+            type: "new_bid",
+            title: "New bid received",
+            message: `${businessDetails?.name ?? "A business"} submitted a bid for ${tender.title}.`,
+            link: `/government/bids?tender=${tenderid}`,
+            meta: {
+                tenderId: tenderid,
+                bidId: String((newBid as any)._id),
+                userId: businessid,
+            },
+        });
+        if (!notification) {
+            console.error("New bid notification was not created", {
+                tenderId: tenderid,
+                bidId: String((newBid as any)._id),
+                recipient: String(tender.createdBy),
+            });
+        }
         const payload: bidlistResponse = {
             message: "Bid created successfully",
             success: true,
@@ -195,6 +221,18 @@ export async function acceptbid(req: any, res: any) {
 
         // notify accepted business
         const acceptedBusiness = await User.findById(bidexisted.businessId);
+        await createNotification({
+            recipient: String(bidexisted.businessId),
+            type: "bid_accepted",
+            title: "Bid accepted",
+            message: `Your bid for ${tinderexisted.title} has been accepted.`,
+            link: "/my-bids",
+            meta: {
+                tenderId: tenderid,
+                bidId: bidid,
+                userId: String(bidexisted.businessId),
+            },
+        });
         if (acceptedBusiness?.email) {
             const t = templates.bidAccepted(
                 acceptedBusiness.name,
@@ -210,6 +248,18 @@ export async function acceptbid(req: any, res: any) {
         // notify each rejected business
         for (const rejectedBid of rejectedBids) {
             const rejectedBusiness = await User.findById(rejectedBid.businessId);
+            await createNotification({
+                recipient: String(rejectedBid.businessId),
+                type: "bid_rejected",
+                title: "Bid not selected",
+                message: `Your bid for ${tinderexisted.title} was not selected.`,
+                link: "/my-bids",
+                meta: {
+                    tenderId: tenderid,
+                    bidId: String((rejectedBid as any)._id),
+                    userId: String(rejectedBid.businessId),
+                },
+            });
             if (rejectedBusiness?.email) {
                 const t = templates.bidRejected(
                     rejectedBusiness.name,
@@ -260,6 +310,18 @@ export async function rejectbid(req: any, res: any) {
 
         // notify rejected business
         const business = await User.findById(bidexisted.businessId);
+        await createNotification({
+            recipient: String(bidexisted.businessId),
+            type: "bid_rejected",
+            title: "Bid rejected",
+            message: `Your bid for ${tinderexisted.title} was rejected.`,
+            link: "/my-bids",
+            meta: {
+                tenderId: tenderid,
+                bidId: bidid,
+                userId: String(bidexisted.businessId),
+            },
+        });
         if (business?.email) {
             const t = templates.bidRejected(
                 business.name,

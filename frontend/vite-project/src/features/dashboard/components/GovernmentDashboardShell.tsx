@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { clearSession, loadSession } from "../../auth/auth.utils";
 import type { GovernmentOutletContext } from "../dashboard.types";
 import { CardSurface, DashboardIcon } from "./DashboardUi";
+import NotificationBell from "../../../components/notifications/NotificationBell";
 
 const navigationItems = [
   { to: "/government", label: "Dashboard", icon: "grid" as const, end: true },
@@ -156,13 +157,7 @@ function GovernmentDashboardShell() {
             </div>
 
             <div className="flex items-center gap-3">
-              <button
-                className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
-                type="button"
-              >
-                <DashboardIcon className="h-5 w-5" name="bell" />
-                <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-emerald-500" />
-              </button>
+              <NotificationBell tone="sky" />
 
               <div className="relative">
                 <button
