@@ -351,7 +351,7 @@ export default function TenderDetail() {
                 </ul>
               ) : null}
 
-              <Button className="w-full" disabled={submitting || bidCredits < 1}>
+              <Button className="w-full" type="submit" disabled={submitting || bidCredits < 1}>
                 {submitting ? "Submitting..." : bidCredits < 1 ? "Buy bid credit first" : "Submit bid"}
               </Button>
               <p className="text-xs text-gray-500">One credit is used every time you submit a bid.</p>

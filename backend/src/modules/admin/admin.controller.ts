@@ -1,5 +1,8 @@
 import bcrypt from "bcryptjs";
 import { User } from "../user/user.model";
+import paymentModel from "../payment/payment.model";
+import { bid } from "../bid/bid.model";
+import Tender from "../tender/tender.model";
 import {apitype} from "../../core/types/apitype"
 import type { userdocument, userlist, userresponse, usersresponse } from "../../core/types/usertype";
 import {Notifier} from  "../../core/notification/notifier"
@@ -58,6 +61,72 @@ export async function getallusers(req:any, res:any){
             sucess:false
         }
         res.status(500).json(payload)
+    }
+}
+
+export async function getAdminPayments(_req: any, res: any) {
+    try {
+        const payments = await paymentModel
+            .find()
+            .populate("userId", "name email role")
+            .sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            message: "Payments retrieved successfully",
+            success: true,
+            payments: payments.map((payment: any) => {
+                const user = payment.userId && typeof payment.userId === "object" ? payment.userId : null;
+
+                return {
+                    id: String(payment._id),
+                    companyName: user?.name ?? "Unknown company",
+                    companyEmail: user?.email ?? "N/A",
+                    companyType: user?.role ?? "business",
+                    creditPackage: `${payment.quantity ?? 1} ${payment.type === "tender" ? "Tender" : "Bid"} Credit${Number(payment.quantity ?? 1) === 1 ? "" : "s"}`,
+                    type: payment.type,
+                    quantity: payment.quantity ?? 1,
+                    amount: Number(payment.amount ?? 0),
+                    paymentMethod: "Stripe",
+                    transactionId: payment.stripeSessionId ?? String(payment._id),
+                    purchaseDate: payment.createdAt,
+                    status: payment.status === "completed" ? "paid" : payment.status === "failed" ? "failed" : "pending",
+                };
+            }),
+        });
+    } catch (_error) {
+        const payload: apitype = {
+            message: "An error occurred while fetching payments",
+            sucess: false
+        };
+        return res.status(500).json(payload);
+    }
+}
+
+export async function getAdminOverview(_req: any, res: any) {
+    try {
+        const [totalTenders, activeBids, approvedCompanies, paymentRows] = await Promise.all([
+            Tender.countDocuments(),
+            bid.countDocuments({ status: "pending" }),
+            User.countDocuments({ status: "approved", role: { $in: ["business", "government"] } }),
+            paymentModel.find({ status: "completed" }).select("amount"),
+        ]);
+
+        return res.status(200).json({
+            message: "Admin overview retrieved successfully",
+            success: true,
+            overview: {
+                totalTenders,
+                activeBids,
+                approvedCompanies,
+                revenue: paymentRows.reduce((total, payment: any) => total + Number(payment.amount ?? 0), 0),
+            },
+        });
+    } catch (_error) {
+        const payload: apitype = {
+            message: "An error occurred while fetching dashboard overview",
+            sucess: false
+        };
+        return res.status(500).json(payload);
     }
 }
 

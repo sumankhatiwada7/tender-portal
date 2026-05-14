@@ -9,6 +9,7 @@ export type AdminUser = {
   email: string;
   role: AdminUserRole;
   status: AdminUserStatus;
+  createdAt?: string;
   businessInfo?: {
     registrationNumber?: string;
     panNumber?: string;
@@ -35,6 +36,7 @@ export type AdminUsersResponse = {
     email?: string;
     role?: string;
     status?: string;
+    createdAt?: string;
     businessInfo?: {
       registrationNumber?: string;
       panNumber?: string;
@@ -83,6 +85,7 @@ export type AdminCreateUserResponse = AdminApiMessage & {
     email?: string;
     role?: string;
     status?: string;
+    createdAt?: string;
     businessInfo?: {
       registrationNumber?: string;
       panNumber?: string;
@@ -102,4 +105,36 @@ export type AdminCreateUserResponse = AdminApiMessage & {
 export type AdminOutletContext = {
   session: SessionState;
   onLogout: () => void;
+};
+
+export type AdminOverview = {
+  totalTenders: number;
+  activeBids: number;
+  approvedCompanies: number;
+  revenue: number;
+};
+
+export type AdminOverviewResponse = AdminApiMessage & {
+  overview?: AdminOverview;
+};
+
+export type AdminPaymentStatus = "paid" | "pending" | "failed";
+
+export type AdminPayment = {
+  id: string;
+  companyName: string;
+  companyEmail: string;
+  companyType: AdminUserRole;
+  creditPackage: string;
+  type: "bid" | "tender";
+  quantity: number;
+  amount: number;
+  paymentMethod: string;
+  transactionId: string;
+  purchaseDate: string;
+  status: AdminPaymentStatus;
+};
+
+export type AdminPaymentsResponse = AdminApiMessage & {
+  payments?: AdminPayment[];
 };

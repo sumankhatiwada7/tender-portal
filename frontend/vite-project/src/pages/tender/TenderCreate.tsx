@@ -157,7 +157,7 @@ export default function TenderCreate() {
             <Button type="button" variant="outline" className="px-6" onClick={() => navigate(-1)}>
               Cancel
             </Button>
-            <Button className="px-6" disabled={loading}>
+            <Button className="px-6" type="submit" disabled={loading}>
               {loading ? "Publishing..." : "Publish tender →"}
             </Button>
           </div>

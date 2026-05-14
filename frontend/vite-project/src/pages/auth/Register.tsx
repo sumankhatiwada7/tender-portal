@@ -216,7 +216,7 @@ export default function Register() {
           </label>
           {fieldErrors.verificationDocs ? <p className="-mt-3 text-xs text-red-500">{fieldErrors.verificationDocs}</p> : null}
 
-          <Button className="w-full" disabled={loading}>
+          <Button className="w-full" type="submit" disabled={loading}>
             {loading ? "Creating account..." : "Create account & submit for review →"}
           </Button>
           <p className="text-xs text-gray-500">By continuing, you agree to procurement compliance and verification checks.</p>

@@ -9,6 +9,7 @@ const navigationItems = [
   { to: "/admin", label: "Dashboard", icon: "grid" as const, end: true },
   { to: "/admin/approvals", label: "Approvals", icon: "shield" as const },
   { to: "/admin/users", label: "Users", icon: "user" as const },
+  { to: "/admin/payments", label: "Payment History", icon: "cash" as const },
 ];
 
 function AdminDashboardShell() {
@@ -37,8 +38,12 @@ function AdminDashboardShell() {
     onLogout: handleLogout,
   };
 
+  const currentPage = navigationItems.find((item) =>
+    item.end ? location.pathname === item.to : location.pathname.startsWith(item.to),
+  );
+
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.16),transparent_28%),linear-gradient(180deg,#f7fafc_0%,#eef2f7_100%)] text-slate-900">
+    <div className="min-h-screen bg-slate-100 text-slate-900">
       {sidebarOpen ? (
         <button
           aria-label="Close sidebar"
@@ -56,12 +61,12 @@ function AdminDashboardShell() {
       >
         <div className="border-b border-white/10 px-6 py-6">
           <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-600 text-white shadow-lg shadow-emerald-900/20">
+            <div className="grid h-11 w-11 place-items-center rounded-lg bg-sky-500 text-white shadow-lg shadow-sky-950/20">
               <DashboardIcon className="h-6 w-6" name="shield" />
             </div>
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-teal-200">TenderFlow</p>
-              <p className="mt-1 text-sm text-slate-300">Admin command center</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-200">TenderNepal</p>
+              <p className="mt-1 text-sm text-slate-300">Admin workspace</p>
             </div>
           </div>
         </div>
@@ -71,7 +76,7 @@ function AdminDashboardShell() {
             <NavLink
               className={({ isActive }) =>
                 [
-                  "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all",
+                  "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all",
                   isActive
                     ? "bg-white/12 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
                     : "text-slate-300 hover:bg-white/7 hover:text-white",
@@ -89,7 +94,7 @@ function AdminDashboardShell() {
 
         <div className="border-t border-white/10 p-4">
           <button
-            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-slate-300 transition hover:bg-white/7 hover:text-white"
+            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-medium text-slate-300 transition hover:bg-white/7 hover:text-white"
             type="button"
             onClick={handleLogout}
           >
@@ -100,20 +105,20 @@ function AdminDashboardShell() {
       </aside>
 
       <div className="lg:pl-72">
-        <header className="sticky top-0 z-20 border-b border-white/70 bg-white/75 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <button
-                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:text-slate-950 lg:hidden"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:text-slate-950 lg:hidden"
                 type="button"
                 onClick={() => setSidebarOpen(true)}
               >
                 <DashboardIcon className="h-5 w-5" name="menu" />
               </button>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-teal-700">Admin Portal</p>
-                <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">Platform oversight dashboard</h1>
-                <p className="mt-1 text-sm text-slate-500">Review pending approvals and monitor account health across the system.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">Admin Portal</p>
+                <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">{currentPage?.label ?? "Admin"}</h1>
+                <p className="mt-1 text-sm text-slate-500">Monitor tenders, approvals, users, and payments from one workspace.</p>
               </div>
             </div>
 
@@ -122,11 +127,11 @@ function AdminDashboardShell() {
 
               <div className="relative">
                 <button
-                  className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-slate-300"
+                  className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-slate-300"
                   type="button"
                   onClick={() => setProfileOpen((current) => !current)}
                 >
-                  <div className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-950 text-white">
+                  <div className="grid h-11 w-11 place-items-center rounded-lg bg-slate-950 text-white">
                     <DashboardIcon className="h-5 w-5" name="user" />
                   </div>
                   <div className="hidden text-sm sm:block">
@@ -141,7 +146,7 @@ function AdminDashboardShell() {
                     <p className="mt-1 text-sm text-slate-500">{session.user.email}</p>
                     <div className="mt-4 grid gap-2">
                       <button
-                        className="rounded-2xl px-3 py-2 text-left text-sm font-medium text-rose-700 transition hover:bg-rose-50"
+                        className="rounded-lg px-3 py-2 text-left text-sm font-medium text-rose-700 transition hover:bg-rose-50"
                         type="button"
                         onClick={handleLogout}
                       >

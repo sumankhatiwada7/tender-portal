@@ -1,189 +1,170 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useToast } from "../../components/ToastProvider";
-import { approveUser, fetchPendingUsers, rejectUser } from "../../features/admin/admin.api";
-import type { AdminUser } from "../../features/admin/admin.types";
-import { CardSurface, EmptyState, LoadingBlock, Modal, TableActionButton } from "../../features/dashboard/components/DashboardUi";
+import { approveUser, fetchAllUsers, rejectUser } from "../../features/admin/admin.api";
+import type { AdminUser, AdminUserStatus } from "../../features/admin/admin.types";
+import {
+  AdminCard,
+  EmptyPanel,
+  FilterSelect,
+  SearchInput,
+  SectionHeader,
+  StatusPill,
+  TableSkeleton,
+} from "../../features/admin/components/AdminUi";
+import { Modal, TableActionButton } from "../../features/dashboard/components/DashboardUi";
+import { matchesSearch } from "../../features/dashboard/dashboard.utils";
 
 function AdminApprovalsPage() {
   const { showToast } = useToast();
-  const [pendingUsers, setPendingUsers] = useState<AdminUser[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | AdminUserStatus>("pending");
+  const [roleFilter, setRoleFilter] = useState<"all" | "business" | "government">("all");
   const [actionUserId, setActionUserId] = useState<string | null>(null);
-  const [pendingAction, setPendingAction] = useState<{ user: AdminUser; action: "approve" | "reject" } | null>(null);
+  const [detailsUser, setDetailsUser] = useState<AdminUser | null>(null);
 
-  async function loadPendingUsers() {
+  async function loadUsers() {
     setLoading(true);
     setError(null);
 
     try {
-      const users = await fetchPendingUsers();
-      setPendingUsers(users);
+      setUsers((await fetchAllUsers()).filter((user) => user.role !== "admin"));
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Unable to load pending users.");
+      setError(loadError instanceof Error ? loadError.message : "Unable to load approvals.");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    void loadPendingUsers();
+    void loadUsers();
   }, []);
 
-  async function handleApprove(user: AdminUser) {
+  const visibleUsers = useMemo(() => {
+    return users.filter((user) => {
+      const searchMatch =
+        searchQuery.trim().length === 0 ||
+        matchesSearch(user.name, searchQuery) ||
+        matchesSearch(user.email, searchQuery);
+      const statusMatch = statusFilter === "all" || user.status === statusFilter;
+      const roleMatch = roleFilter === "all" || user.role === roleFilter;
+
+      return searchMatch && statusMatch && roleMatch;
+    });
+  }, [roleFilter, searchQuery, statusFilter, users]);
+
+  async function handleStatus(user: AdminUser, action: "approve" | "reject") {
     setActionUserId(user.id);
 
     try {
-      await approveUser(user.id);
+      if (action === "approve") {
+        await approveUser(user.id);
+      } else {
+        await rejectUser(user.id);
+      }
+
       showToast({
         tone: "success",
-        title: "User approved",
-        message: `${user.name} can now access the platform.`,
+        title: action === "approve" ? "Company approved" : "Company rejected",
+        message: `${user.name} has been ${action === "approve" ? "approved" : "rejected"}.`,
       });
-      await loadPendingUsers();
-    } catch (approveError) {
+      await loadUsers();
+    } catch (statusError) {
       showToast({
         tone: "error",
-        title: "Approve failed",
-        message: approveError instanceof Error ? approveError.message : "Unable to approve this user.",
+        title: "Status update failed",
+        message: statusError instanceof Error ? statusError.message : "Unable to update this company.",
       });
     } finally {
       setActionUserId(null);
     }
-  }
-
-  async function handleReject(user: AdminUser) {
-    setActionUserId(user.id);
-
-    try {
-      await rejectUser(user.id);
-      showToast({
-        tone: "success",
-        title: "User rejected",
-        message: `${user.name} has been marked as rejected.`,
-      });
-      await loadPendingUsers();
-    } catch (rejectError) {
-      showToast({
-        tone: "error",
-        title: "Reject failed",
-        message: rejectError instanceof Error ? rejectError.message : "Unable to reject this user.",
-      });
-    } finally {
-      setActionUserId(null);
-    }
-  }
-
-  async function handleConfirmAction() {
-    if (!pendingAction) {
-      return;
-    }
-
-    if (pendingAction.action === "approve") {
-      await handleApprove(pendingAction.user);
-    } else {
-      await handleReject(pendingAction.user);
-    }
-
-    setPendingAction(null);
   }
 
   if (loading) {
-    return <LoadingBlock label="Loading pending approvals..." />;
+    return <TableSkeleton columns={6} rows={8} />;
   }
 
   if (error) {
-    return (
-      <EmptyState
-        title="Approvals unavailable"
-        description={error}
-        icon="shield"
-        action={
-          <button
-            className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-            type="button"
-            onClick={() => void loadPendingUsers()}
-          >
-            Try again
-          </button>
-        }
-      />
-    );
+    return <EmptyPanel title="Approvals unavailable" description={error} />;
   }
 
   return (
-    <div className="space-y-8">
-      <CardSurface className="overflow-hidden">
-        <div className="border-b border-slate-200 px-6 py-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Approvals queue</p>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-950">Accept or reject pending users</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Only pending users appear in this list.</p>
+    <div className="space-y-6">
+      <AdminCard className="p-5">
+        <SectionHeader
+          eyebrow="Approvals"
+          title="Company approval queue"
+          description="Review business and government company profiles before they gain platform access."
+        />
+        <div className="mt-5 flex flex-wrap items-end gap-3">
+          <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search companies" />
+          <FilterSelect
+            label="Status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { label: "Pending", value: "pending" },
+              { label: "Approved", value: "approved" },
+              { label: "Rejected", value: "rejected" },
+              { label: "All statuses", value: "all" },
+            ]}
+          />
+          <FilterSelect
+            label="Company type"
+            value={roleFilter}
+            onChange={setRoleFilter}
+            options={[
+              { label: "All types", value: "all" },
+              { label: "Business", value: "business" },
+              { label: "Government", value: "government" },
+            ]}
+          />
         </div>
+      </AdminCard>
 
-        {pendingUsers.length === 0 ? (
-          <div className="p-6">
-            <EmptyState
-              title="No pending users"
-              description="All users are already reviewed."
-              icon="check"
-            />
+      <AdminCard className="overflow-hidden">
+        {visibleUsers.length === 0 ? (
+          <div className="p-5">
+            <EmptyPanel title="No approvals found" description="Try another status, company type, or search term." />
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50/80">
-                <tr className="text-left text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                  <th className="px-6 py-4">Name</th>
-                  <th className="px-6 py-4">Email</th>
-                  <th className="px-6 py-4">Role</th>
-                  <th className="px-6 py-4">Verification docs</th>
-                  <th className="px-6 py-4">Actions</th>
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <thead className="bg-slate-50">
+                <tr className="text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  <th className="px-5 py-3">Company</th>
+                  <th className="px-5 py-3">Type</th>
+                  <th className="px-5 py-3">Documents</th>
+                  <th className="px-5 py-3">Status</th>
+                  <th className="px-5 py-3">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {pendingUsers.map((user) => {
+              <tbody className="divide-y divide-slate-100">
+                {visibleUsers.map((user) => {
                   const isBusy = actionUserId === user.id;
 
                   return (
-                    <tr key={user.id}>
-                      <td className="px-6 py-5 font-semibold text-slate-900">{user.name}</td>
-                      <td className="px-6 py-5 text-sm text-slate-600">{user.email}</td>
-                      <td className="px-6 py-5 text-sm capitalize text-slate-700">{user.role}</td>
-                      <td className="px-6 py-5 text-sm text-slate-600">
-                        {user.verificationDocs.length === 0 ? (
-                          <span className="text-slate-400">No documents</span>
-                        ) : (
-                          <div className="flex flex-wrap gap-2">
-                            {user.verificationDocs.map((document) => (
-                              <a
-                                className="inline-flex items-center rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 transition hover:bg-teal-100"
-                                href={document.url}
-                                key={`${user.id}-${document.url}`}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                {document.originalname}
-                              </a>
-                            ))}
-                          </div>
-                        )}
+                    <tr className="transition hover:bg-slate-50" key={user.id}>
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-slate-950">{user.name}</p>
+                        <p className="mt-1 text-xs text-slate-500">{user.email}</p>
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-5 py-4 capitalize text-slate-600">{user.role}</td>
+                      <td className="px-5 py-4 text-slate-600">{user.verificationDocs.length} file(s)</td>
+                      <td className="px-5 py-4">
+                        <StatusPill status={user.status} />
+                      </td>
+                      <td className="px-5 py-4">
                         <div className="flex flex-wrap gap-2">
-                          <TableActionButton
-                            label="Approve"
-                            icon="check"
-                            tone="emerald"
-                            onClick={() => setPendingAction({ user, action: "approve" })}
-                            disabled={isBusy}
-                          />
-                          <TableActionButton
-                            label="Reject"
-                            icon="x"
-                            tone="rose"
-                            onClick={() => setPendingAction({ user, action: "reject" })}
-                            disabled={isBusy}
-                          />
+                          <TableActionButton icon="eye" label="Details" onClick={() => setDetailsUser(user)} />
+                          {user.status !== "approved" ? (
+                            <TableActionButton icon="check" label="Approve" tone="emerald" disabled={isBusy} onClick={() => void handleStatus(user, "approve")} />
+                          ) : null}
+                          {user.status !== "rejected" ? (
+                            <TableActionButton icon="x" label="Reject" tone="rose" disabled={isBusy} onClick={() => void handleStatus(user, "reject")} />
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -193,43 +174,55 @@ function AdminApprovalsPage() {
             </table>
           </div>
         )}
-      </CardSurface>
+      </AdminCard>
 
       <Modal
-        open={Boolean(pendingAction)}
-        title={pendingAction?.action === "approve" ? "Approve user" : "Reject user"}
-        description={
-          pendingAction
-            ? `${pendingAction.action === "approve" ? "Approve" : "Reject"} ${pendingAction.user.name} (${pendingAction.user.email})?`
-            : undefined
-        }
-        onClose={() => {
-          if (!actionUserId) {
-            setPendingAction(null);
-          }
-        }}
+        open={Boolean(detailsUser)}
+        title={detailsUser ? detailsUser.name : "Company details"}
+        description={detailsUser ? `${detailsUser.email} · ${detailsUser.role}` : undefined}
+        onClose={() => setDetailsUser(null)}
       >
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button
-            className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
-            type="button"
-            onClick={() => setPendingAction(null)}
-            disabled={Boolean(actionUserId)}
-          >
-            Cancel
-          </button>
-          <button
-            className={[
-              "rounded-full px-5 py-3 text-sm font-semibold text-white transition",
-              pendingAction?.action === "approve" ? "bg-emerald-600 hover:bg-emerald-500" : "bg-rose-600 hover:bg-rose-500",
-            ].join(" ")}
-            type="button"
-            onClick={() => void handleConfirmAction()}
-            disabled={Boolean(actionUserId)}
-          >
-            {pendingAction?.action === "approve" ? "Confirm approval" : "Confirm rejection"}
-          </button>
-        </div>
+        {detailsUser ? (
+          <div className="space-y-4 text-sm text-slate-700">
+            <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2">
+              <p><span className="font-semibold text-slate-900">Status:</span> {detailsUser.status}</p>
+              <p><span className="font-semibold text-slate-900">Type:</span> {detailsUser.role}</p>
+              {detailsUser.role === "business" ? (
+                <>
+                  <p><span className="font-semibold text-slate-900">Registration:</span> {detailsUser.businessInfo?.registrationNumber || "N/A"}</p>
+                  <p><span className="font-semibold text-slate-900">PAN/VAT:</span> {detailsUser.businessInfo?.panNumber || "N/A"}</p>
+                </>
+              ) : null}
+              {detailsUser.role === "government" ? (
+                <>
+                  <p><span className="font-semibold text-slate-900">Office:</span> {detailsUser.governmentInfo?.officeAddress || "N/A"}</p>
+                  <p><span className="font-semibold text-slate-900">Representative:</span> {detailsUser.governmentInfo?.representative || "N/A"}</p>
+                </>
+              ) : null}
+            </div>
+
+            <div>
+              <p className="font-semibold text-slate-950">Verification documents</p>
+              {detailsUser.verificationDocs.length === 0 ? (
+                <p className="mt-2 text-slate-500">No documents uploaded.</p>
+              ) : (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {detailsUser.verificationDocs.map((document) => (
+                    <a
+                      className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 transition hover:bg-sky-100"
+                      href={document.url}
+                      key={document.url}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {document.originalname}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
       </Modal>
     </div>
   );

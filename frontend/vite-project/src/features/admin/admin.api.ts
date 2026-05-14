@@ -8,6 +8,9 @@ import type {
   AdminCreateUserPayload,
   AdminCreateUserResponse,
   AdminFieldErrors,
+  AdminOverviewResponse,
+  AdminPayment,
+  AdminPaymentsResponse,
   AdminUser,
   AdminUsersResponse,
 } from "./admin.types";
@@ -97,6 +100,7 @@ function toAdminUser(raw: {
     originalname?: string;
     uploadedAt?: string;
   }>;
+  createdAt?: string;
 }): AdminUser {
   const role = raw.role === "admin" || raw.role === "government" || raw.role === "business" ? raw.role : "business";
   const status = raw.status === "approved" || raw.status === "rejected" || raw.status === "pending" ? raw.status : "pending";
@@ -107,6 +111,7 @@ function toAdminUser(raw: {
     email: raw.email ?? "N/A",
     role,
     status,
+    createdAt: raw.createdAt,
     businessInfo: {
       registrationNumber: raw.businessInfo?.registrationNumber,
       panNumber: raw.businessInfo?.panNumber,
@@ -127,6 +132,27 @@ function toAdminUser(raw: {
   };
 }
 
+function toAdminPayment(raw: Partial<AdminPayment>): AdminPayment {
+  const status = raw.status === "paid" || raw.status === "failed" || raw.status === "pending" ? raw.status : "pending";
+  const type = raw.type === "tender" ? "tender" : "bid";
+  const quantity = Number(raw.quantity ?? 1);
+
+  return {
+    id: String(raw.id ?? raw.transactionId ?? ""),
+    companyName: raw.companyName ?? "Unknown company",
+    companyEmail: raw.companyEmail ?? "N/A",
+    companyType: raw.companyType === "government" || raw.companyType === "admin" ? raw.companyType : "business",
+    creditPackage: raw.creditPackage ?? `${quantity} ${type === "tender" ? "Tender" : "Bid"} Credit${quantity === 1 ? "" : "s"}`,
+    type,
+    quantity,
+    amount: Number(raw.amount ?? 0),
+    paymentMethod: raw.paymentMethod ?? "Stripe",
+    transactionId: raw.transactionId ?? String(raw.id ?? ""),
+    purchaseDate: raw.purchaseDate ?? new Date().toISOString(),
+    status,
+  };
+}
+
 export async function fetchPendingUsers() {
   try {
     const response = await axios.get<AdminUsersResponse>(`${ADMIN_BASE_PATH}/users/pending`, getAuthorizedConfig());
@@ -142,6 +168,29 @@ export async function fetchAllUsers() {
     return (response.data.users ?? []).map(toAdminUser).filter((user) => user.id);
   } catch (error) {
     throw normalizeApiFailure(error, "Unable to load all users.");
+  }
+}
+
+export async function fetchAdminOverview() {
+  try {
+    const response = await axios.get<AdminOverviewResponse>(`${ADMIN_BASE_PATH}/overview`, getAuthorizedConfig());
+    return response.data.overview ?? {
+      totalTenders: 0,
+      activeBids: 0,
+      approvedCompanies: 0,
+      revenue: 0,
+    };
+  } catch (error) {
+    throw normalizeApiFailure(error, "Unable to load dashboard analytics.");
+  }
+}
+
+export async function fetchAdminPayments() {
+  try {
+    const response = await axios.get<AdminPaymentsResponse>(`${ADMIN_BASE_PATH}/payments`, getAuthorizedConfig());
+    return (response.data.payments ?? []).map(toAdminPayment).filter((payment) => payment.id);
+  } catch (error) {
+    throw normalizeApiFailure(error, "Unable to load payment history.");
   }
 }
 

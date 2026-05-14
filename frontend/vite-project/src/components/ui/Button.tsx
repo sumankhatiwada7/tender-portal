@@ -16,9 +16,9 @@ const styles: Record<Variant, string> = {
     "border-[1.5px] border-red-300 text-red-600 py-3 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50",
 };
 
-export default function Button({ variant = "primary", children, className = "", ...props }: Props) {
+export default function Button({ variant = "primary", children, className = "", type = "button", ...props }: Props) {
   return (
-    <button className={`${styles[variant]} ${className}`} {...props}>
+    <button className={`${styles[variant]} ${className}`} type={type} {...props}>
       {children}
     </button>
   );

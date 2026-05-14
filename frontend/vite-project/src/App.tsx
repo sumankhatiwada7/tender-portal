@@ -18,6 +18,7 @@ import ProfilePage from "./pages/government/ProfilePage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminApprovalsPage from "./pages/admin/AdminApprovalsPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminPaymentHistoryPage from "./pages/admin/AdminPaymentHistoryPage";
 
 function DashboardRoute() {
   const role = useAuthStore((state) => state.user?.role?.[0]);
@@ -66,6 +67,7 @@ function App() {
             <Route index element={<AdminDashboardPage />} />
             <Route path="approvals" element={<AdminApprovalsPage />} />
             <Route path="users" element={<AdminUsersPage />} />
+            <Route path="payments" element={<AdminPaymentHistoryPage />} />
           </Route>
         </Route>
 
