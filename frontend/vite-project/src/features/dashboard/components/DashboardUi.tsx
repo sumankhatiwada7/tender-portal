@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { BidStatus, TenderStatus } from "../dashboard.types";
-import { getBidStatusTone, getTenderStatusTone } from "../dashboard.utils";
+import { getBidStatusLabel, getBidStatusTone, getTenderStatusLabel, getTenderStatusTone } from "../dashboard.utils";
 
 type DashboardIconName =
   | "grid"
@@ -26,7 +26,16 @@ type DashboardIconName =
   | "clock"
   | "filter"
   | "spark"
-  | "shield";
+  | "shield"
+  | "download"
+  | "file"
+  | "chart"
+  | "moon"
+  | "sun"
+  | "lock"
+  | "settings"
+  | "arrowUp"
+  | "layers";
 
 export function DashboardIcon({
   name,
@@ -224,6 +233,63 @@ export function DashboardIcon({
           <path d="m9.5 12.25 1.65 1.65 3.35-3.6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
         </svg>
       );
+    case "download":
+      return (
+        <svg {...common}>
+          <path d="M12 4.75v10m0 0-3.5-3.5M12 14.75l3.5-3.5M5 18.75h14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+      );
+    case "file":
+      return (
+        <svg {...common}>
+          <path d="M7.25 3.75h6.5l4 4v12.5h-10.5a1.5 1.5 0 0 1-1.5-1.5V5.25a1.5 1.5 0 0 1 1.5-1.5Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.8" />
+          <path d="M13.75 3.75v4h4M8.75 12h6.5M8.75 15h4.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+      );
+    case "chart":
+      return (
+        <svg {...common}>
+          <path d="M4.75 19.25h14.5M7.5 16V9.75m4.5 6.25V5.75m4.5 10.25v-8" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+      );
+    case "moon":
+      return (
+        <svg {...common}>
+          <path d="M18.5 15.25A7.5 7.5 0 0 1 8.75 5.5a7.75 7.75 0 1 0 9.75 9.75Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+      );
+    case "sun":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="3.25" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M12 3.75v1.5m0 13.5v1.5m8.25-8.25h-1.5m-13.5 0h-1.5m14.08-5.83-1.06 1.06M7.73 16.27l-1.06 1.06m0-11.66 1.06 1.06m8.54 8.54 1.06 1.06" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+        </svg>
+      );
+    case "lock":
+      return (
+        <svg {...common}>
+          <path d="M7.75 10.25V8.5a4.25 4.25 0 0 1 8.5 0v1.75m-9.5 0h10.5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H6.75a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+      );
+    case "settings":
+      return (
+        <svg {...common}>
+          <path d="M12 14.75a2.75 2.75 0 1 0 0-5.5 2.75 2.75 0 0 0 0 5.5Z" stroke="currentColor" strokeWidth="1.8" />
+          <path d="m18.25 13.25.2 1.55-1.8 1.04-1.25-.94a6.6 6.6 0 0 1-1.4.58l-.2 1.52h-3.6l-.2-1.52a6.6 6.6 0 0 1-1.4-.58l-1.25.94-1.8-1.04.2-1.55a6.5 6.5 0 0 1-.75-1.25l-1.45-.6V9.6L5 9a6.5 6.5 0 0 1 .75-1.25l-.2-1.55 1.8-1.04 1.25.94c.44-.24.91-.44 1.4-.58L10.2 4h3.6l.2 1.52c.49.14.96.34 1.4.58l1.25-.94 1.8 1.04-.2 1.55c.3.39.56.81.75 1.25l1.45.6v2.8l-1.45.6c-.19.44-.45.86-.75 1.25Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.35" />
+        </svg>
+      );
+    case "arrowUp":
+      return (
+        <svg {...common}>
+          <path d="M12 19.25V4.75m0 0L6.75 10M12 4.75 17.25 10" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+      );
+    case "layers":
+      return (
+        <svg {...common}>
+          <path d="m12 4 8.25 4.25L12 12.5 3.75 8.25 12 4Zm-6.5 8.25L12 15.5l6.5-3.25M5.5 16.25 12 19.5l6.5-3.25" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        </svg>
+      );
   }
 
   return null;
@@ -233,7 +299,7 @@ export function CardSurface({ children, className = "" }: { children: ReactNode;
   return (
     <div
       className={[
-        "rounded-[1.75rem] border border-slate-200/70 bg-white/92 shadow-[0_20px_60px_rgba(15,23,42,0.08)]",
+        "rounded-lg border border-slate-200/75 bg-white shadow-[0_14px_40px_rgba(15,23,42,0.06)] transition-colors dark:border-slate-800 dark:bg-slate-900 dark:shadow-none",
         className,
       ].join(" ")}
     >
@@ -248,12 +314,14 @@ export function StatCard({
   detail,
   icon,
   tone = "sky",
+  change,
 }: {
   label: string;
   value: string;
   detail: string;
   icon: DashboardIconName;
   tone?: "sky" | "emerald" | "slate" | "amber";
+  change?: string;
 }) {
   const tones = {
     sky: "from-sky-500 to-blue-600 text-sky-50",
@@ -263,14 +331,20 @@ export function StatCard({
   };
 
   return (
-    <CardSurface className="overflow-hidden">
-      <div className="flex items-start justify-between gap-4 p-6">
+    <CardSurface className="overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(15,23,42,0.09)] dark:hover:border-slate-700">
+      <div className="flex items-start justify-between gap-4 p-5">
         <div>
-          <p className="text-sm font-medium text-slate-500">{label}</p>
-          <p className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">{value}</p>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{detail}</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">{value}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{detail}</p>
+          {change ? (
+            <p className="mt-3 inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+              <DashboardIcon className="h-3.5 w-3.5" name="arrowUp" />
+              {change}
+            </p>
+          ) : null}
         </div>
-        <div className={["grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br shadow-lg", tones[tone]].join(" ")}>
+        <div className={["grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-gradient-to-br shadow-lg", tones[tone]].join(" ")}>
           <DashboardIcon className="h-6 w-6" name={icon} />
         </div>
       </div>
@@ -279,14 +353,16 @@ export function StatCard({
 }
 
 export function StatusBadge({ status }: { status: TenderStatus | BidStatus }) {
+  const isBidStatus = status === "pending" || status === "accepted" || status === "rejected";
   const tone =
-    status === "pending" || status === "accepted" || status === "rejected"
+    isBidStatus
       ? getBidStatusTone(status)
       : getTenderStatusTone(status);
+  const label = isBidStatus ? getBidStatusLabel(status) : getTenderStatusLabel(status);
 
   return (
     <span className={["inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ring-1 ring-inset", tone].join(" ")}>
-      {status}
+      {label}
     </span>
   );
 }
@@ -304,11 +380,11 @@ export function EmptyState({
 }) {
   return (
     <CardSurface className="p-10 text-center">
-      <div className="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-slate-100 text-slate-600">
+      <div className="mx-auto grid h-14 w-14 place-items-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
         <DashboardIcon className="h-7 w-7" name={icon} />
       </div>
-      <h3 className="mt-5 text-2xl font-semibold text-slate-950">{title}</h3>
-      <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-slate-600">{description}</p>
+      <h3 className="mt-5 text-2xl font-semibold text-slate-950 dark:text-white">{title}</h3>
+      <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-400">{description}</p>
       {action ? <div className="mt-6">{action}</div> : null}
     </CardSurface>
   );
@@ -316,13 +392,18 @@ export function EmptyState({
 
 export function LoadingBlock({ label = "Loading data..." }: { label?: string }) {
   return (
-    <CardSurface className="p-8">
+    <CardSurface className="p-6">
       <div className="flex items-center gap-4">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-sky-500" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-sky-500 dark:border-slate-800 dark:border-t-sky-400" />
         <div>
-          <p className="text-lg font-semibold text-slate-900">{label}</p>
-          <p className="text-sm text-slate-500">Please wait a moment.</p>
+          <p className="text-lg font-semibold text-slate-900 dark:text-white">{label}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Please wait a moment.</p>
         </div>
+      </div>
+      <div className="mt-6 grid gap-3 md:grid-cols-3">
+        <div className="h-24 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800" />
+        <div className="h-24 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800" />
+        <div className="h-24 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800" />
       </div>
     </CardSurface>
   );
@@ -342,7 +423,7 @@ export function TableActionButton({
   disabled?: boolean;
 }) {
   const tones = {
-    slate: "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-950",
+    slate: "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-white",
     sky: "border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-300 hover:text-sky-900",
     rose: "border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:text-rose-900",
     emerald: "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:text-emerald-900",
@@ -351,7 +432,7 @@ export function TableActionButton({
   return (
     <button
       className={[
-        "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-all",
+        "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-all",
         tones[tone],
         disabled ? "cursor-not-allowed opacity-50" : "hover:-translate-y-0.5",
       ].join(" ")}
@@ -390,14 +471,14 @@ export function Modal({
         type="button"
         onClick={onClose}
       />
-      <CardSurface className="relative z-10 w-full max-w-2xl p-6 sm:p-8">
+      <CardSurface className="relative z-10 max-h-[90vh] w-full max-w-3xl overflow-y-auto p-6 sm:p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-2xl font-semibold text-slate-950">{title}</h3>
-            {description ? <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p> : null}
+            <h3 className="text-2xl font-semibold text-slate-950 dark:text-white">{title}</h3>
+            {description ? <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{description}</p> : null}
           </div>
           <button
-            className="rounded-full border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-slate-300 hover:text-slate-900"
+            className="rounded-lg border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-white"
             type="button"
             onClick={onClose}
           >
@@ -430,7 +511,7 @@ export function PaginationControls({
       </p>
       <div className="flex items-center gap-2">
         <button
-          className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
           type="button"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
@@ -438,7 +519,7 @@ export function PaginationControls({
           Previous
         </button>
         <button
-          className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
           type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
@@ -446,6 +527,29 @@ export function PaginationControls({
           Next
         </button>
       </div>
+    </div>
+  );
+}
+
+export function SectionHeader({
+  eyebrow,
+  title,
+  description,
+  action,
+}: {
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        {eyebrow ? <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700 dark:text-sky-300">{eyebrow}</p> : null}
+        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{title}</h2>
+        {description ? <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">{description}</p> : null}
+      </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }

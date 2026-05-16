@@ -7,6 +7,8 @@ import {
   DashboardIcon,
   EmptyState,
   LoadingBlock,
+  Modal,
+  SectionHeader,
   StatusBadge,
   TableActionButton,
 } from "../../features/dashboard/components/DashboardUi";
@@ -29,8 +31,11 @@ function BidsPage() {
   const [loadingBids, setLoadingBids] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | BidItem["status"]>("all");
   const deferredSearch = useDeferredValue(searchValue);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
+  const [detailsBid, setDetailsBid] = useState<BidItem | null>(null);
+  const [shortlistedIds, setShortlistedIds] = useState<Set<string>>(new Set());
 
   const selectedTenderId = searchParams.get("tender") ?? "";
   const selectedTender = tenders.find((tender) => tender.id === selectedTenderId) ?? null;
@@ -61,8 +66,7 @@ function BidsPage() {
     setError(null);
 
     try {
-      const nextBids = await fetchBidsForTender(tenderId);
-      setBids(nextBids);
+      setBids(await fetchBidsForTender(tenderId));
     } catch (loadError) {
       setError(getApiErrorMessage(loadError, "Unable to load bids for this tender."));
     } finally {
@@ -86,14 +90,15 @@ function BidsPage() {
   const filteredBids = useMemo(() => {
     const query = deferredSearch.trim();
 
-    if (!query) {
-      return bids;
-    }
-
-    return bids.filter((bid) =>
-      [bid.businessName ?? "", bid.businessEmail ?? "", bid.proposal].some((value) => matchesSearch(value, query)),
-    );
-  }, [bids, deferredSearch]);
+    return bids.filter((bid) => {
+      const matchesStatus = statusFilter === "all" ? true : bid.status === statusFilter;
+      const matchesQuery =
+        query.length === 0
+          ? true
+          : [bid.businessName ?? "", bid.businessEmail ?? "", bid.proposal].some((value) => matchesSearch(value, query));
+      return matchesStatus && matchesQuery;
+    });
+  }, [bids, deferredSearch, statusFilter]);
 
   const pendingCount = bids.filter((bid) => bid.status === "pending").length;
   const acceptedCount = bids.filter((bid) => bid.status === "accepted").length;
@@ -115,7 +120,7 @@ function BidsPage() {
 
       showToast({
         tone: "success",
-        title: action === "accept" ? "Bid accepted" : "Bid rejected",
+        title: action === "accept" ? "Bid approved" : "Bid rejected",
         message:
           action === "accept"
             ? `${bid.businessName ?? "The business"} has been awarded the tender.`
@@ -135,6 +140,18 @@ function BidsPage() {
     }
   }
 
+  function toggleShortlist(bidId: string) {
+    setShortlistedIds((current) => {
+      const next = new Set(current);
+      if (next.has(bidId)) {
+        next.delete(bidId);
+      } else {
+        next.add(bidId);
+      }
+      return next;
+    });
+  }
+
   if (loadingTenders) {
     return <LoadingBlock label="Loading bid workspace..." />;
   }
@@ -147,7 +164,7 @@ function BidsPage() {
         icon="gavel"
         action={
           <button
-            className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            className="rounded-lg bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
             type="button"
             onClick={() => void loadTenders()}
           >
@@ -166,7 +183,7 @@ function BidsPage() {
         icon="gavel"
         action={
           <Link
-            className="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            className="inline-flex items-center justify-center rounded-lg bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
             to="/government/create"
           >
             Create Tender
@@ -177,79 +194,82 @@ function BidsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <CardSurface className="p-6">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-700">Bid review</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Review incoming proposals</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-              Select one of your tenders, inspect the businesses that applied, and accept or reject bids directly from this page.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              ["Pending", String(pendingCount)],
-              ["Accepted", String(acceptedCount)],
-              ["Rejected", String(rejectedCount)],
-            ].map(([label, value]) => (
-              <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-3" key={label}>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</p>
-                <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
-              </div>
+        <SectionHeader
+          eyebrow="Bid management"
+          title="Review incoming proposals"
+          description="Inspect submissions, shortlist suppliers, compare bids, and approve or reject tender responses."
+        />
+
+        <div className="mt-6 grid gap-4 xl:grid-cols-[280px_1fr_180px]">
+          <select
+            className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+            value={selectedTenderId}
+            onChange={(event) => setSearchParams(new URLSearchParams({ tender: event.target.value }), { replace: true })}
+          >
+            {tenders.map((tender) => (
+              <option key={tender.id} value={tender.id}>
+                {tender.title}
+              </option>
             ))}
+          </select>
+
+          <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-950">
+            <DashboardIcon className="h-5 w-5 text-slate-400" name="search" />
+            <input
+              className="w-full border-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 dark:text-slate-200"
+              placeholder="Search by company, email, or proposal text"
+              type="text"
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.target.value)}
+            />
           </div>
-        </div>
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-[280px_1fr]">
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium text-slate-700">Choose tender</span>
-            <select
-              className="w-full rounded-[1.35rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
-              value={selectedTenderId}
-              onChange={(event) => setSearchParams(new URLSearchParams({ tender: event.target.value }), { replace: true })}
-            >
-              {tenders.map((tender) => (
-                <option key={tender.id} value={tender.id}>
-                  {tender.title}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium text-slate-700">Search bids</span>
-            <div className="flex items-center gap-3 rounded-[1.35rem] border border-slate-200 bg-slate-50 px-4 py-3">
-              <DashboardIcon className="h-5 w-5 text-slate-400" name="search" />
-              <input
-                className="w-full border-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
-                placeholder="Search by business or proposal text"
-                type="text"
-                value={searchValue}
-                onChange={(event) => setSearchValue(event.target.value)}
-              />
-            </div>
-          </label>
+          <select
+            className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as "all" | BidItem["status"])}
+          >
+            <option value="all">All bid statuses</option>
+            <option value="pending">Submitted</option>
+            <option value="accepted">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
         </div>
       </CardSurface>
 
+      <div className="grid gap-4 md:grid-cols-3">
+        {[
+          ["Submitted", pendingCount, "Awaiting evaluation"],
+          ["Approved", acceptedCount, "Award-ready decisions"],
+          ["Rejected", rejectedCount, "Declined submissions"],
+        ].map(([label, value, detail]) => (
+          <CardSurface className="p-5" key={label}>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{value}</p>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{detail}</p>
+          </CardSurface>
+        ))}
+      </div>
+
       {selectedTender ? (
-        <CardSurface className="p-6">
+        <CardSurface className="p-5">
           <div className="grid gap-5 lg:grid-cols-4">
             <div className="lg:col-span-2">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-700">Selected tender</p>
-              <h3 className="mt-2 text-2xl font-semibold text-slate-950">{selectedTender.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{selectedTender.description}</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-700 dark:text-sky-300">Selected tender</p>
+              <h3 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{selectedTender.title}</h3>
+              <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-400">{selectedTender.description}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Deadline</p>
-              <p className="mt-2 text-lg font-semibold text-slate-950">{formatDate(selectedTender.deadline)}</p>
-              <p className="mt-4 text-xs uppercase tracking-[0.2em] text-slate-500">Budget</p>
-              <p className="mt-2 text-lg font-semibold text-slate-950">{formatCurrency(selectedTender.budget)}</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Deadline</p>
+              <p className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">{formatDate(selectedTender.deadline)}</p>
+              <p className="mt-4 text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Budget</p>
+              <p className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">{formatCurrency(selectedTender.budget)}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Location</p>
-              <p className="mt-2 text-lg font-semibold text-slate-950">{selectedTender.location}</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Location</p>
+              <p className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">{selectedTender.location}</p>
               <div className="mt-4">
                 <StatusBadge status={selectedTender.status} />
               </div>
@@ -263,60 +283,53 @@ function BidsPage() {
       ) : filteredBids.length === 0 ? (
         <EmptyState
           title="No bids to review"
-          description={
-            bids.length === 0
-              ? "No businesses have submitted a bid for this tender yet."
-              : "No bids match the current search."
-          }
+          description={bids.length === 0 ? "No businesses have submitted a bid for this tender yet." : "No bids match the current filters."}
           icon="briefcase"
         />
       ) : (
         <CardSurface className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50/80">
-                <tr className="text-left text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                  <th className="px-6 py-4">Business</th>
-                  <th className="px-6 py-4">Bid Amount</th>
-                  <th className="px-6 py-4">Proposal</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Actions</th>
+          <div className="overflow-x-auto dashboard-scrollbar">
+            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+              <thead className="bg-slate-50/80 dark:bg-slate-950">
+                <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  <th className="px-5 py-4">Company Name</th>
+                  <th className="px-5 py-4">Tender Name</th>
+                  <th className="px-5 py-4">Bid Amount</th>
+                  <th className="px-5 py-4">Submission Date</th>
+                  <th className="px-5 py-4">Documents</th>
+                  <th className="px-5 py-4">Bid Status</th>
+                  <th className="px-5 py-4">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
+              <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
                 {filteredBids.map((bid) => {
-                  const actionDisabled =
-                    pendingActionId === bid.id || bid.status !== "pending" || selectedTender?.status === "awarded";
+                  const actionDisabled = pendingActionId === bid.id || bid.status !== "pending" || selectedTender?.status === "awarded";
 
                   return (
-                    <tr className="align-top" key={bid.id}>
-                      <td className="px-6 py-5">
-                        <p className="font-semibold text-slate-900">{bid.businessName ?? "Business account"}</p>
-                        <p className="mt-1 text-sm text-slate-500">{bid.businessEmail ?? bid.businessId}</p>
+                    <tr className="align-top transition hover:bg-slate-50 dark:hover:bg-slate-950" key={bid.id}>
+                      <td className="px-5 py-5">
+                        <p className="font-semibold text-slate-900 dark:text-white">{bid.businessName ?? "Business account"}</p>
+                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{bid.businessEmail ?? bid.businessId}</p>
                       </td>
-                      <td className="px-6 py-5 text-sm font-semibold text-slate-900">{formatCurrency(bid.amount)}</td>
-                      <td className="px-6 py-5 text-sm leading-7 text-slate-600">
-                        <div className="max-w-xl">{bid.proposal}</div>
-                      </td>
-                      <td className="px-6 py-5">
+                      <td className="px-5 py-5 text-sm text-slate-600 dark:text-slate-300">{selectedTender?.title ?? bid.tenderId}</td>
+                      <td className="px-5 py-5 text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(bid.amount)}</td>
+                      <td className="px-5 py-5 text-sm text-slate-600 dark:text-slate-300">{bid.createdAt ? formatDate(bid.createdAt) : "Not available"}</td>
+                      <td className="px-5 py-5 text-sm text-slate-600 dark:text-slate-300">{bid.documents.length} submitted</td>
+                      <td className="px-5 py-5">
                         <StatusBadge status={bid.status} />
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-5 py-5">
                         <div className="flex flex-wrap gap-2">
-                          <TableActionButton
-                            disabled={actionDisabled}
-                            icon="check"
-                            label={pendingActionId === bid.id ? "Working..." : "Accept"}
-                            tone="emerald"
-                            onClick={() => void handleDecision("accept", bid)}
-                          />
-                          <TableActionButton
-                            disabled={actionDisabled}
-                            icon="x"
-                            label={pendingActionId === bid.id ? "Working..." : "Reject"}
-                            tone="rose"
-                            onClick={() => void handleDecision("reject", bid)}
-                          />
+                          <TableActionButton icon="eye" label="Details" tone="sky" onClick={() => setDetailsBid(bid)} />
+                          <TableActionButton icon="check" label={pendingActionId === bid.id ? "Working..." : "Approve"} tone="emerald" disabled={actionDisabled} onClick={() => void handleDecision("accept", bid)} />
+                          <TableActionButton icon="x" label={pendingActionId === bid.id ? "Working..." : "Reject"} tone="rose" disabled={actionDisabled} onClick={() => void handleDecision("reject", bid)} />
+                          <TableActionButton icon="spark" label={shortlistedIds.has(bid.id) ? "Shortlisted" : "Shortlist"} onClick={() => toggleShortlist(bid.id)} />
+                          {bid.documents[0]?.url ? (
+                            <a className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300" href={bid.documents[0].url} rel="noreferrer" target="_blank">
+                              <DashboardIcon className="h-4 w-4" name="download" />
+                              Download
+                            </a>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -327,6 +340,29 @@ function BidsPage() {
           </div>
         </CardSurface>
       )}
+
+      <Modal open={Boolean(detailsBid)} title="Bid details" description="Inspect proposal metadata and submitted documents." onClose={() => setDetailsBid(null)}>
+        {detailsBid ? (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <p className="rounded-lg bg-slate-50 p-4 dark:bg-slate-950"><span className="font-semibold text-slate-950 dark:text-white">Company:</span> {detailsBid.businessName ?? "Business account"}</p>
+              <p className="rounded-lg bg-slate-50 p-4 dark:bg-slate-950"><span className="font-semibold text-slate-950 dark:text-white">Amount:</span> {formatCurrency(detailsBid.amount)}</p>
+              <p className="rounded-lg bg-slate-50 p-4 dark:bg-slate-950 md:col-span-2"><span className="font-semibold text-slate-950 dark:text-white">Proposal:</span> {detailsBid.proposal}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-slate-950 dark:text-white">Documents submitted</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {detailsBid.documents.length ? detailsBid.documents.map((document) => (
+                  <a className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-300" href={document.url} target="_blank" rel="noreferrer" key={document.url}>
+                    <DashboardIcon className="h-4 w-4" name="download" />
+                    {document.originalname}
+                  </a>
+                )) : <p className="text-sm text-slate-500 dark:text-slate-400">No documents attached.</p>}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
     </div>
   );
 }

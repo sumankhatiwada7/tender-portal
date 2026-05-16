@@ -18,11 +18,17 @@ export interface tenderDocument extends Document{
     budget:number,
     category:string,
     location:string,
+    eligibilityCriteria?:string,
+    requiredDocuments?:string,
+    tenderType?:string,
+    contactInformation?:string,
     documents:uploadDocument[],
     createdBy:string,
     status:tenderStatus
     closedAt?: Date
     awardedto?:Types.ObjectId
+    createdAt?: Date
+    updatedAt?: Date
 }
 export type tenderlist ={
     id:string,
@@ -32,11 +38,17 @@ export type tenderlist ={
     budget:number,
     category:string,
     location:string,
+    eligibilityCriteria?:string,
+    requiredDocuments?:string,
+    tenderType?:string,
+    contactInformation?:string,
     documents:uploadDocument[],
     createdBy:string,
     status:tenderStatus
     closedAt?: Date
     awardedto?:string
+    createdAt?: Date
+    updatedAt?: Date
 }
 export type tenderResponse ={
     message:string,
@@ -45,7 +57,7 @@ export type tenderResponse ={
 }
 
 export type updateTenderInput = Partial<
-    Pick<tenderlist, "title" | "description" | "deadline" | "budget" | "status" | "category" | "location" | "documents">
+    Pick<tenderlist, "title" | "description" | "deadline" | "budget" | "status" | "category" | "location" | "eligibilityCriteria" | "requiredDocuments" | "tenderType" | "contactInformation" | "documents">
 >;
 
 export type tenderListResponse ={

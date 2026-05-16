@@ -58,6 +58,10 @@ export async function createTender(input: TenderMutationInput) {
     formData.append("deadline", input.deadline);
     formData.append("category", input.category);
     formData.append("location", input.location);
+    formData.append("eligibilityCriteria", input.eligibilityCriteria ?? "");
+    formData.append("requiredDocuments", input.requiredDocuments ?? "");
+    formData.append("tenderType", input.tenderType ?? "");
+    formData.append("contactInformation", input.contactInformation ?? "");
 
     if (input.status) {
       formData.append("status", input.status);
@@ -83,6 +87,10 @@ export async function updateTender(id: string, input: TenderMutationInput) {
     formData.append("deadline", input.deadline);
     formData.append("category", input.category);
     formData.append("location", input.location);
+    formData.append("eligibilityCriteria", input.eligibilityCriteria ?? "");
+    formData.append("requiredDocuments", input.requiredDocuments ?? "");
+    formData.append("tenderType", input.tenderType ?? "");
+    formData.append("contactInformation", input.contactInformation ?? "");
 
     if (input.status) {
       formData.append("status", input.status);

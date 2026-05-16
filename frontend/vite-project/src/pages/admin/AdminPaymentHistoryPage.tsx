@@ -180,7 +180,7 @@ function AdminPaymentHistoryPage() {
                     <th className="px-5 py-3">Credit package</th>
                     <th className="px-5 py-3">Amount</th>
                     <th className="px-5 py-3">Method</th>
-                    <th className="px-5 py-3">Transaction ID</th>
+                  
                     <th className="px-5 py-3">Purchase date</th>
                     <th className="px-5 py-3">Status</th>
                     <th className="px-5 py-3">Invoice</th>
@@ -196,9 +196,7 @@ function AdminPaymentHistoryPage() {
                       <td className="px-5 py-4 text-slate-700">{payment.creditPackage}</td>
                       <td className="px-5 py-4 font-semibold text-slate-950">{formatCurrency(payment.amount)}</td>
                       <td className="px-5 py-4 text-slate-600">{payment.paymentMethod}</td>
-                      <td className="px-5 py-4">
-                        <span className="font-mono text-xs text-slate-600">{payment.transactionId}</span>
-                      </td>
+                     
                       <td className="px-5 py-4 text-slate-600">{formatDate(payment.purchaseDate)}</td>
                       <td className="px-5 py-4">
                         <StatusPill status={payment.status} />

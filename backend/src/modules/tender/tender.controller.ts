@@ -16,10 +16,16 @@ function toTenderListItem(tender: tenderDocument): tenderlist {
         budget:tender.budget,
         category:tender.category,
         location:tender.location,
+        eligibilityCriteria:tender.eligibilityCriteria,
+        requiredDocuments:tender.requiredDocuments,
+        tenderType:tender.tenderType,
+        contactInformation:tender.contactInformation,
         documents:Array.isArray(tender.documents) ? tender.documents : [],
         createdBy:String(tender.createdBy),
         status:tender.status,
-        awardedto: tender.awardedto ? String(tender.awardedto) : undefined 
+        awardedto: tender.awardedto ? String(tender.awardedto) : undefined,
+        createdAt:tender.createdAt,
+        updatedAt:tender.updatedAt
     }
 }
 
@@ -84,6 +90,10 @@ export async function CreateTender(req: any, res: any) {
      const description = String(data.description ?? "").trim();
      const category = String(data.category ?? "").trim();
      const location = String(data.location ?? "").trim();
+     const eligibilityCriteria = String(data.eligibilityCriteria ?? "").trim();
+     const requiredDocuments = String(data.requiredDocuments ?? "").trim();
+     const tenderType = String(data.tenderType ?? "Open Competitive").trim();
+     const contactInformation = String(data.contactInformation ?? "").trim();
      const deadline = data.deadline;
      const parsedDeadline = new Date(deadline);
      const budget = Number(data.budget);
@@ -146,6 +156,10 @@ export async function CreateTender(req: any, res: any) {
         budget,
         category,
         location,
+        eligibilityCriteria,
+        requiredDocuments,
+        tenderType,
+        contactInformation,
         documents,
         createdBy,
         status
@@ -381,6 +395,10 @@ export async function UpdateTender(req: any, res: any) {
         if (data.status !== undefined) updateData.status = data.status;
         if (data.category !== undefined) updateData.category = String(data.category).trim();
         if (data.location !== undefined) updateData.location = String(data.location).trim();
+        if (data.eligibilityCriteria !== undefined) updateData.eligibilityCriteria = String(data.eligibilityCriteria).trim();
+        if (data.requiredDocuments !== undefined) updateData.requiredDocuments = String(data.requiredDocuments).trim();
+        if (data.tenderType !== undefined) updateData.tenderType = String(data.tenderType).trim();
+        if (data.contactInformation !== undefined) updateData.contactInformation = String(data.contactInformation).trim();
         const uploadedFiles = (Array.isArray(req.files) ? req.files : []) as uploadedFileInput[];
         if (uploadedFiles.length > 0) {
             updateData.documents = mapUploadedDocuments(uploadedFiles);

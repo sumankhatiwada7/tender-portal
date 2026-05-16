@@ -18,7 +18,7 @@ const notificationSchema = new mongoose.Schema({
         ],
         required: true
     },
-        title:    { type: String, required: true },
+    title:    { type: String, required: true },
     message:  { type: String, required: true },
     isRead:   { type: Boolean, default: false },
     link:     { type: String, default: null },  // frontend route to navigate on click

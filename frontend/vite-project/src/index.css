@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap");
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-green-dark: #0f4424;
@@ -52,6 +53,11 @@
 }
 
 @layer utilities {
+  .dashboard-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
+  }
+
   .ticker-track {
     animation: ticker-scroll 34s linear infinite;
     will-change: transform;

@@ -24,7 +24,9 @@ function tolistitem(bid: BidDocument): bidlist {
         proposal: bid.proposal,
         amount: bid.amount,
         status: bid.status,
-        documents: Array.isArray((bid as any).documents) ? (bid as any).documents : []
+        documents: Array.isArray((bid as any).documents) ? (bid as any).documents : [],
+        createdAt: (bid as any).createdAt,
+        updatedAt: (bid as any).updatedAt
     }
 }
 

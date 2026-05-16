@@ -15,6 +15,7 @@ import CreateTenderPage from "./pages/government/CreateTenderPage";
 import ManageTendersPage from "./pages/government/ManageTendersPage";
 import BidsPage from "./pages/government/BidsPage";
 import ProfilePage from "./pages/government/ProfilePage";
+import GovernmentPaymentPage from "./pages/government/GovernmentPaymentPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminApprovalsPage from "./pages/admin/AdminApprovalsPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
@@ -53,6 +54,7 @@ function App() {
             <Route path="create" element={<CreateTenderPage />} />
             <Route path="manage" element={<ManageTendersPage />} />
             <Route path="bids" element={<BidsPage />} />
+            <Route path="payment" element={<GovernmentPaymentPage />} />
             <Route path="profile" element={<ProfilePage />} />
           </Route>
           <Route path="/tenders/create" element={<Navigate to="/government/create" replace />} />

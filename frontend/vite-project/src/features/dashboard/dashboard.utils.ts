@@ -19,6 +19,14 @@ export function formatDate(value: string | Date) {
   }).format(date);
 }
 
+export function formatShortDate(value?: string | Date) {
+  if (!value) {
+    return "Not available";
+  }
+
+  return formatDate(value);
+}
+
 export function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -57,6 +65,28 @@ export function getTenderStatusTone(status: TenderStatus) {
       return "bg-slate-100 text-slate-700 ring-slate-200";
     case "awarded":
       return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  }
+}
+
+export function getTenderStatusLabel(status: TenderStatus) {
+  switch (status) {
+    case "open":
+      return "Active";
+    case "closed":
+      return "Closed";
+    case "awarded":
+      return "Under Review";
+  }
+}
+
+export function getBidStatusLabel(status: BidItem["status"]) {
+  switch (status) {
+    case "pending":
+      return "Submitted";
+    case "accepted":
+      return "Approved";
+    case "rejected":
+      return "Rejected";
   }
 }
 

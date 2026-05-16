@@ -18,6 +18,8 @@ export interface BidDocument extends Document{
     amount: number;
     status: status;
     documents: uploadDocument[];
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 export type bidlist = {
     id: string;
@@ -29,6 +31,8 @@ export type bidlist = {
     amount: number;
     status: status;
     documents: uploadDocument[];
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 export type bidlistResponse ={
     message:string,

@@ -21,6 +21,12 @@ export type TenderItem = {
   createdBy: string;
   status: TenderStatus;
   awardedto?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  eligibilityCriteria?: string;
+  requiredDocuments?: string;
+  tenderType?: string;
+  contactInformation?: string;
 };
 
 export type BidItem = {
@@ -33,6 +39,8 @@ export type BidItem = {
   amount: number;
   status: BidStatus;
   documents: UploadedDocument[];
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type TenderListResponse = {
@@ -88,6 +96,10 @@ export type TenderFormValues = {
   category: string;
   location: string;
   status: "open" | "closed";
+  eligibilityCriteria: string;
+  requiredDocuments: string;
+  tenderType: string;
+  contactInformation: string;
 };
 
 export type TenderMutationInput = {
@@ -99,6 +111,10 @@ export type TenderMutationInput = {
   location: string;
   documents: File[];
   status?: "open" | "closed";
+  eligibilityCriteria?: string;
+  requiredDocuments?: string;
+  tenderType?: string;
+  contactInformation?: string;
 };
 
 export type GovernmentOutletContext = {

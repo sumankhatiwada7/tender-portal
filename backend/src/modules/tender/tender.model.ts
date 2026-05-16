@@ -48,6 +48,26 @@ const tenderSchema= new mongoose.Schema({
         required:true,
         trim:true
     },
+    eligibilityCriteria:{
+        type:String,
+        trim:true,
+        default:""
+    },
+    requiredDocuments:{
+        type:String,
+        trim:true,
+        default:""
+    },
+    tenderType:{
+        type:String,
+        trim:true,
+        default:"Open Competitive"
+    },
+    contactInformation:{
+        type:String,
+        trim:true,
+        default:""
+    },
     documents:{
         type:[documentSchema],
         default:[]
